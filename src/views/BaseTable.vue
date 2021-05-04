@@ -283,11 +283,11 @@ export default {
             addForm:[
                 {label:'学号',prop:'id',type:'Input'},
                 {label:'姓名',prop:'name',type:'Input'},
-                {label:'性别',prop:'gender',type:'Select',options:[{value:'',label:'全部'},{value:'男',label:'男'},{value:'女',label:'女'}]},
+                {label:'性别',prop:'gender',type:'Select',options:[{value:'男',label:'男'},{value:'女',label:'女'}]},
                 {label:'生日',prop:'birthday',type:'YMR',default_time:new Date().setFullYear((new Date().getFullYear()-25))},
-                {label:'专业',prop:'major',type:'Select',options:[{value:'',label:'全部'},{value:'软件工程',label:'软件工程'},{value:'计算机软件',label:'计算机软件'}]},
-                {label:'学历',prop:'proED',type:'Select',options:[{value:'',label:'全部'},{value:'大学',label:'大学'},{value:'研究生',label:'研究生'},{value:'博士',label:'博士'},{value:'3',label:'其他'}]},
-                {label:'政治面貌',prop:'political',type:'Select',options:[{value:'',label:'全部'},{value:'党员',label:'党员'},{value:'预备党员',label:'预备党员'},{value:'入党积极分子',label:'入党积极分子'},{value:'其他',label:'其他'}]},
+                {label:'专业',prop:'major',type:'Select',options:[{value:'软件工程',label:'软件工程'},{value:'计算机软件',label:'计算机软件'}]},
+                {label:'学历',prop:'proED',type:'Select',options:[{value:'大学',label:'大学'},{value:'研究生',label:'研究生'},{value:'博士',label:'博士'},{value:'3',label:'其他'}]},
+                {label:'政治面貌',prop:'political',type:'Select',options:[{value:'党员',label:'党员'},{value:'预备党员',label:'预备党员'},{value:'入党积极分子',label:'入党积极分子'},{value:'其他',label:'其他'}]},
                 {label:'入党时间',prop:'time',type:'YMR',default_time:new Date().setFullYear((new Date().getFullYear()-10))},
             ],
             //新增用户或编辑用户信息的Dialog对话框对应数据
@@ -450,7 +450,7 @@ export default {
 
 
         // 删除操作
-        handleDelete(index) {
+        handleDelete(index,row) {
             // 二次确认删除
             this.$confirm("确定要删除吗？", "提示", {
                 type: "warning"
@@ -458,10 +458,26 @@ export default {
                 .then(() => {
 
                     // 传消息给后台删除数据
+                    deltData([row.id]);
+
 
                     // 更新this.tableData和this.tableDataShow中的对应数据
-                    this.tableData.splice(index, 1);
-                    this.$message.success("删除成功");
+
+                    for(let i=this.tableData.length-1;i>=0;i--){
+                        if(this.tableData[i].id === row.id){
+                            this.tableData.splice(i,1);
+                        } 
+                    }
+
+                this.pageTotal = Math.max(Math.floor(this.tableData.length/this.pageSize),1);
+                // 如果当前页超过新的最后一页，则更新当前页为最后一页
+                if(this.pageIndex>this.pageTotal){
+                    this.pageIndex = this.pageTotal;
+                    return;//由于 this.pageIndex改变会触发watch中的函数，因此可以在这里就返回。
+                }
+                let start = Math.max((this.pageIndex-1)*this.pageSize,0), end = Math.min(this.pageIndex*this.pageSize,this.tableData.length);
+                this.tableDataShow = this.tableData.slice(start,end);                 
+                this.$message.success("删除成功");
                 })
                 .catch(() => {});
         },
@@ -485,7 +501,6 @@ export default {
 
         },
         async delAllSelection() {
-
             let str = "", deleteIds = Object.keys(this.selectedItem);
             for (let i = 0; i < deleteIds.length; i++) {
                 str += deleteIds[i] + " ";
