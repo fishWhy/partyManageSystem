@@ -281,6 +281,7 @@ export default {
             //从后台获取的关于当前页面的所有数据
             tableData: [],
 
+            //显示表格时相关数据
             showDate:{
                 tableDateShow:[],
                 pageIndex:1,
@@ -288,11 +289,6 @@ export default {
                 itemTotal:1,
             },
 
-            //显示表格时相关数据
-            // pageTotal: 1,
-            // pageIndex: 1,
-            // pageSize: 10,
-            // tableDataShow:[],
 
             //保存那些被选中的键值
             selectedItem:{},//保存被选中的项，以每项的id为键,值为true
@@ -351,7 +347,6 @@ export default {
                 for(let i=0;i<this.showDate.tableDateShow.length;i++){
                     if(this.selectedItem[this.showDate.tableDateShow[i].id]){
                         this.$refs.multipleTable.toggleRowSelection(this.showDate.tableDateShow[i],true);
-                        // console.log(`the new page include${this.tableDataShow[i].id}`)
                     }
                 }
                 this.selectedItemLock = false;
@@ -487,8 +482,8 @@ export default {
                 //将数据提交给后台
                 await cInfor(rData);
 
-                //传给后台成功后，更改本页面中的this.tableData和this.tableDataShow中的对应数据
-                this.showDate.tableDataShow[this.idx] = rData;
+                //传给后台成功后，更改本页面中的对应数据
+                this.showDate.tableDateShow[this.idx] = rData;
                 this.editVisible = false;
 
 
@@ -616,7 +611,6 @@ export default {
                         _data = await importfxx(this.fileList[i].raw,this.listTitle,this.tableTitle);
                         
                         //》》》》这里其实涉及到一个问题，我们通过importfxx从表格获取的数据不一定都是字符串类型的数据，
-                        // 但我们默认存储在tableData和tableDataShow中的对象的数据都是字符串，因此这里需要转换一下
                         _data.forEach(item=>{
                             for(let k in item){
                                 if(Object.prototype.hasOwnProperty.call(item,k)){

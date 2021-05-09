@@ -89,10 +89,12 @@ let dataFun = (function(){
     //改
     //使用infor对象改变存储在data中的infor.id的信息
     function cInfor(infor){
+        console.log('infor:',infor)
         return new Promise(function(resolve,reject){
             for(let i=data.list.length-1;i>=0;i--){
                 if(data.list[i].id===infor.id){
                     data.list[i] = infor;
+                    console.log('that is all right')
                     resolve(infor.id)
                     return;
                 }
