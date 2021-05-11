@@ -12,68 +12,63 @@
             
 
              <el-container>
-                <el-aside width="220px">
-                    <el-card id="filter_314" shadow="always" >
-                        <template #header >
-                          <div style="height:20px;line-height:20px;" class="el-icon-s-operation">
-                            筛  选
-                          </div>
-                        </template>
-                        <div class="ces-search">
-                            <el-form  label-position="left" label-width="70px" id="selectForm">
-                                <el-form-item v-for='item in searchForm' :label="item.label" :key='item.prop'  size='mini'>
-                                   <!-- 输入框 -->
-                                    <el-input v-if="item.type==='Input'" v-model="query[item.prop]" class="el_side_style"  ></el-input>
-                                    <!-- 下拉框 -->
-                                    <el-select v-if="item.type==='Select'" v-model="query[item.prop]"  class="el_side_style"  >
-                                        <el-option v-for="op in item.options" :label="op.label" :value="op.value" :key="op.value" ></el-option>
-                                    </el-select>
-                                     <!-- 单选 -->
-                                    <el-radio-group v-if="item.type==='Radio'" v-model="query[item.prop]" class="el_side_style">
-                                        <el-radio v-for="ra in item.radios" :label="ra.label" :key="'select'+ra.label" style="width: 50px;font-size:smaller;">{{ra.value}}</el-radio>
-                                    </el-radio-group>
+                <el-header style="outline: 1px solid red;" height="auto">
+                    <el-container>
+                        <el-aside width="80px" style="margin"><el-tag type="success" style="font-size:14px;">基础搜索</el-tag></el-aside>
+                        <el-main id="searchBaseMain" style="padding: 4px 0 0 5px;"><search-form></search-form></el-main>
+                    </el-container>
+                    <!-- <el-divider style="margin: 5px 0 5px 0"></el-divider> -->
 
-                                    <!-- 日期 -->
-                                    <el-date-picker  v-if="item.type==='YMR'" :default-value="item.default_time" v-model="query[item.prop]" style="width:130px;font-size:smaller" class="el_side_style"></el-date-picker>
+                    <el-collapse v-model="activeNames" @change="handleChange">
+                        <el-collapse-item name="1" style="outline:1px solid blue;" id="el_col_item314">
+                            <template #title>
+                                 <el-aside width="80px" style="margin"><el-tag type="success" style="font-size:14px;">高级搜索</el-tag></el-aside>
+                            </template>
+                            <el-tabs v-model="activeName" type="card" id="el_tabs314" >
+                                <el-tab-pane label="提交申请" name="apply" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
+                                <el-tab-pane label="积极分子" name="activist" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
+                                <el-tab-pane label="发展对象" name="develop" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
+                                <el-tab-pane label="预备党员" name="candidate" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
+                                <el-tab-pane label="正式党员" name="party" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
+                            </el-tabs>
+                        </el-collapse-item>
+                    </el-collapse>
+                </el-header>
 
-                                </el-form-item>
-                            </el-form>
-                            <el-form inline>
-                                <el-form-item>
-                                    <el-button type="primary" size="mini" @click="resetQueryData">重置</el-button>
-                                </el-form-item>
-                                <el-form-item style="margin-left:20px">
-                                    <el-button type="success" size="mini" @click="requeryData">查询</el-button>
-                                </el-form-item>
 
-                            </el-form>
+                <el-main >
+                    <div class="handle-box" id="el_button314">
+                        <div style="float:left" class="seachButton333">
+                            <el-button type="success"  @click="requeryData">查询</el-button>
+                            <el-button type="primary" @click="resetQueryData">重置</el-button>               
                         </div>
-                      
-                    </el-card>
-                    
 
-                </el-aside>
-                <el-main>
-                    <div class="handle-box">
-                        <el-button
+                        <div style="float:right">
+                            <el-button
                             type="primary"
                             icon="el-icon-delete"
                             class="handle-del mr10"
                             @click="delAllSelection"
                         >批量删除</el-button>
-                        <el-button type="primary" icon="el-icon-plus" @click="handleAdd">添加</el-button>
-                        <el-button type="primary" icon="el-icon-printer" @click="getExcel">导出Excel</el-button>
-                        <el-button type="primary" icon="el-icon-paperclip" @click="importVisible=true">导入Excel</el-button>
-                        <div style="display:inline-block;margin-left:10px">
-                            <el-input v-model="searchQuery" placeholder="学号" class="handle-input mr10"></el-input>
-                            <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
+                            <el-button type="primary" icon="el-icon-plus" @click="handleAdd">添加</el-button>
+                            <el-button type="primary" icon="el-icon-printer" @click="getExcel">导出Excel</el-button>
+                            <el-button type="primary" icon="el-icon-paperclip" @click="importVisible=true">导入Excel</el-button>
                         </div>
-                        
                     </div>
 
+                    <div class="pagination" style="margin:12px 0 4px 0">
+                        <el-pagination
+                            background
+                            layout="total, prev, pager, next"
+                            :current-page="showDate.pageIndex"
+                            :page-size="showDate.pageSize"
+                            :total="showDate.itemTotal"
+                            @current-change="currentPageChange"
+                           
+                        ></el-pagination>
+                    </div>
 
-
-                     <el-table
+                    <el-table
                         :data="showDate.tableDateShow"
                         border
                         class="table"
@@ -111,17 +106,7 @@
                         </el-table-column>
                     </el-table>
                     
-                    <div class="pagination">
-                        <el-pagination
-                            background
-                            layout="total, prev, pager, next"
-                            :current-page="showDate.pageIndex"
-                            :page-size="showDate.pageSize"
-                            :total="showDate.itemTotal"
-                            @current-change="currentPageChange"
-                           
-                        ></el-pagination>
-                    </div>
+                    
                 </el-main>
             </el-container>
            
@@ -202,25 +187,17 @@ import {addDate,cInfor,deltDate,fetchData,setNewData,isInDate,getTitle,downDate}
 import {importfxx} from "../utils/excel/upDownExcel.js";
 
 import el_dialog from "../components/el_dialog.vue"
+import searchForm from "../components/searchForm.vue"
 
 export default {
     name: "basetable",
     components:{
-        ElDia:el_dialog
+        ElDia:el_dialog,
+        SearchForm:searchForm
     },
     data() {
         return {
-            //筛选表单
-            searchForm:[
-                {label:'学号',prop:'id',type:'Input'},
-                {label:'姓名',prop:'name',type:'Input'},
-                {label:'性别',prop:'gender',type:'Select',options:[{value:'',label:'全部'},{value:'男',label:'男'},{value:'女',label:'女'}]},
-                {label:'生日',prop:'birthday',type:'YMR',default_time:new Date().setFullYear((new Date().getFullYear()-25))},
-                {label:'专业',prop:'major',type:'Select',options:[{value:'',label:'全部'},{value:'软件工程',label:'软件工程'},{value:'计算机软件',label:'计算机软件'}]},
-                {label:'学历',prop:'proED',type:'Select',options:[{value:'',label:'全部'},{value:'大学',label:'大学'},{value:'研究生',label:'研究生'},{value:'博士',label:'博士'},{value:'3',label:'其他'}]},
-                {label:'政治面貌',prop:'political',type:'Select',options:[{value:'',label:'全部'},{value:'党员',label:'党员'},{value:'预备党员',label:'预备党员'},{value:'入党积极分子',label:'入党积极分子'},{value:'其他',label:'其他'}]},
-                {label:'入党时间',prop:'time',type:'YMR',default_time:new Date().setFullYear((new Date().getFullYear()-10))},
-            ],
+            activeName:'apply',
             //筛选/搜索数据时的条件
             query: {
                 id: "",
@@ -255,8 +232,7 @@ export default {
 
             id: -1,
 
-            //搜索
-            searchQuery:'',
+           
 
             //文件导出
             listTitle:'',
@@ -362,17 +338,7 @@ export default {
             this.getDate(this.query);
 
         },
-        // 触发搜索按钮
-        handleSearch() {
-            //注意这里的this.searchQuery与this.query.id是分离的
-            let obj = {};
-            for(let key in this.query){
-                obj[key]="";
-            }
-            obj.id = this.searchQuery;
-            obj.pageIndex = 1;
-            this.getDate(obj);
-        },
+        
 
 
         // 删除操作
@@ -699,17 +665,15 @@ export default {
 
 <style scoped>
 .handle-box {
-    margin-bottom: 20px;
+    margin-bottom: 0px;
+    font-size: 12px;
 }
 
 .handle-select {
     width: 120px;
 }
 
-.handle-input {
-    width: 300px;
-    display: inline-block;
-}
+
 .table {
     width: 100%;
     font-size: 14px;
@@ -717,31 +681,12 @@ export default {
 .red {
     color: #ff0000;
 }
-.mr10 {
-    margin-right: 10px;
-}
+
 .table-td-thumb {
     display: block;
     margin: auto;
     width: 40px;
     height: 40px;
-}
-
-.el_side_style{
-    font-size: smaller;
-    width: 130px !important;
-    margin-top: 0px;
-    /* outline: 1px solid red; */
-}
-
-/* 设置el-aside中表单 label的字体 */
-#selectForm>>>.el-form-item__label{
-    font-size: smaller;
-    /* outline: yellow; */
-    /* color: blue; */
-}
-#selectForm .el-form-item{
-    margin-bottom: 5px;
 }
 
 /* 添加新用户的表单 */
@@ -755,7 +700,25 @@ export default {
     width: 200px!important;
 }
 
+#el_tabs314:deep(#tab-apply),
+#el_tabs314:deep(#tab-activist),
+#el_tabs314:deep(#tab-develop),
+#el_tabs314:deep(#tab-candidate),
+#el_tabs314:deep(#tab-party){
+    font-size: 12px;
+}
 
+#el_button314 button{
+    font-size: 12px;
+    margin-left: 12px;
+    min-height: 30px;
+}
+/* 清浮动 */
+#el_button314::after{
+    content: "";
+    display: block;
+    clear: both;
+}
 
 
 
@@ -770,25 +733,9 @@ export default {
 /* 由于vue中scope的作用，对于element ui中有些默认的样式我们无法修改，这里需要再写一个不带scoped的style标签 
 但是，一定一定要带一个css的深度选择器（例如这里的#filter_314 ），防止污染全局的样式
 */
-/* 修改 id为filter的header的样式 */
-#filter_314 .el-card__header{
-    /* color: red!important; */
-    /* outline: 1px solid red; */
-    width: 50%;
-    /* transform: translateX(100%); */
-    padding: 8px 8px 8px 20px;
-    font-size: 14px;
-    text-align: center;
-    color: #FFF;
-    background-color: #409EFF;
-    border-color: #409EFF;
-    border-radius: 4px;
 
-}
-#filter_314{
-    padding-top: 20px;
-    border: 0px;
-}
+
+
 /* 改变id为el_table_314的el-table中内容的padding来减少高度 */
 #el_table_314 .el-table__body-wrapper .el-table__body .el-table__row td{
     padding: 0px;
@@ -830,8 +777,16 @@ export default {
 
 }
 
+/* #searchBaseMain{
+    outline: 1px solid blue;
+} */
+
 
 /* div.el-card__header {
     padding: 0px!important;
 } */
+#el_col_item314 .el-collapse-item__wrap .el-collapse-item__content{
+    /* outline: 1px solid red; */
+    padding-bottom: 0px;
+}
 </style>
