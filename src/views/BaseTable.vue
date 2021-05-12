@@ -12,24 +12,24 @@
             
 
              <el-container>
-                <el-header style="outline: 1px solid red;" height="auto">
+                <el-header  height="auto">
                     <el-container>
                         <el-aside width="80px" style="margin"><el-tag type="success" style="font-size:14px;">基础搜索</el-tag></el-aside>
-                        <el-main id="searchBaseMain" style="padding: 4px 0 0 5px;"><search-form></search-form></el-main>
+                        <el-main id="searchBaseMain" style="padding: 4px 0 0 5px;"><search-form :formObj="formList.baseForm" :minHeight="70"></search-form></el-main>
                     </el-container>
                     <!-- <el-divider style="margin: 5px 0 5px 0"></el-divider> -->
 
                     <el-collapse v-model="activeNames" @change="handleChange">
-                        <el-collapse-item name="1" style="outline:1px solid blue;" id="el_col_item314">
+                        <el-collapse-item name="1"  id="el_col_item314">
                             <template #title>
                                  <el-aside width="80px" style="margin"><el-tag type="success" style="font-size:14px;">高级搜索</el-tag></el-aside>
                             </template>
-                            <el-tabs v-model="activeName" type="card" id="el_tabs314" >
-                                <el-tab-pane label="提交申请" name="apply" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
-                                <el-tab-pane label="积极分子" name="activist" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
-                                <el-tab-pane label="发展对象" name="develop" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
-                                <el-tab-pane label="预备党员" name="candidate" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
-                                <el-tab-pane label="正式党员" name="party" class="el_tab_pane314"><search-form></search-form></el-tab-pane>
+                            <el-tabs v-model="activeName" type="card" id="el_tabs314" style="padding:0 0 0 20px">
+                                <el-tab-pane label="提交申请" name="apply" class="el_tab_pane314"><search-form  :formObj="formList.applyForm" :minHeight="40"></search-form></el-tab-pane>
+                                <el-tab-pane label="积极分子" name="activist" class="el_tab_pane314"><search-form :formObj="formList.activistForm" :minHeight="40"></search-form></el-tab-pane>
+                                <el-tab-pane label="发展对象" name="develop" class="el_tab_pane314"><search-form :formObj="formList.developForm" :minHeight="40"></search-form></el-tab-pane>
+                                <el-tab-pane label="预备党员" name="candidate" class="el_tab_pane314"><search-form :formObj="formList.candidateForm" :minHeight="40"></search-form></el-tab-pane>
+                                <el-tab-pane label="正式党员" name="party" class="el_tab_pane314"><search-form :formObj="formList.partyForm" :minHeight="40"></search-form></el-tab-pane>
                             </el-tabs>
                         </el-collapse-item>
                     </el-collapse>
@@ -78,14 +78,16 @@
                         id="el_table_314"
                     >
                         <el-table-column type="selection" width="55" align="center"></el-table-column>
-                        <el-table-column prop="id" label="学号"  align="center"></el-table-column>
+                        <el-table-column prop="stuId" label="学号"  align="center"></el-table-column>
                         <el-table-column prop="name" label="姓名" align="center"></el-table-column>
                         <el-table-column prop="gender" label="性别" align="center"></el-table-column>
+                        <el-table-column prop="national" label="民族" align="center"></el-table-column>
                         <el-table-column prop="birthday" label="生日" align="center"></el-table-column>
-                        <el-table-column prop="major" label="专业" align="center"></el-table-column>
+                        <el-table-column prop="branch" label="支部" align="center"></el-table-column>
                         <el-table-column prop="proED" label="学历" align="center"></el-table-column>
-                        <el-table-column prop="political" label="政治面貌" align="center"></el-table-column>
-                        <el-table-column prop="time" label="入党时间" align="center"></el-table-column>
+                        <el-table-column prop="grade" label="年级" align="center"></el-table-column>
+                        <el-table-column prop="class" label="班级" align="center"></el-table-column>
+                        <el-table-column prop="stage" label="所处阶段" align="center"></el-table-column>
 
                         <el-table-column label="操作" width="180" align="center">
                             <template #default="scope">
@@ -94,7 +96,7 @@
                                     icon="el-icon-edit"
 
                                     @click="handleEdit(scope.$index, scope.row)"
-                                >编辑</el-button>
+                                >详情</el-button>
                                 <el-button
                                     type="text"
                                     icon="el-icon-delete"
@@ -127,7 +129,7 @@
                 <div>
                     <el-tag>导入Excel格式要求</el-tag>
                     <div style="margin-top:10px">
-                        导入的Excel要包含：学号、姓名、性别、生日、专业、学历、政治面貌和入党时间 这几个类别。
+                        导入的Excel要包含：学号、姓名、性别、民族、生日、支部、学历、班级和所处阶段 这几个类别。
                         
                         <span style="color:red" >具体格式可见模板下载按钮中的例子。</span>
                          <el-button type="danger" icon="el-icon-download" @click="getExcelTemplate" size="mini">模板下载</el-button>
@@ -185,6 +187,7 @@
 // import { fetchData,setNewData } from "../api/index";
 import {addDate,cInfor,deltDate,fetchData,setNewData,isInDate,getTitle,downDate} from "../api/index";
 import {importfxx} from "../utils/excel/upDownExcel.js";
+import {formList,dateTranfer} from "../api/formDate.js"
 
 import el_dialog from "../components/el_dialog.vue"
 import searchForm from "../components/searchForm.vue"
@@ -197,15 +200,38 @@ export default {
     },
     data() {
         return {
+
+            formList: '',
+
             activeName:'apply',
             //筛选/搜索数据时的条件
             query: {
-                id: "",
+                stuId: "",
                 name: "",
                 gender:'',
-                birthday:null,
-                major:'',
-                proED:'',
+                // birthday:null,
+                national:'',//民族
+                branch:'',//支部
+                age:'',
+                // major:'',
+                proED:'',//学历
+                class:'',
+                tutor:'',//导师
+                stage:'',//所处阶段
+
+                isApplay:'',//是否提交申请书
+
+                actvTrainTime:'',//积极分子培训班时间
+                actvTrainResult:'',//培训班结业情况
+
+                devTime:'',//确定发展对象时间
+                devTrainTime:'',//发展对象培训时间
+                devTrainResult:'',//培训班结业情况
+
+                candidateTime:'',//入党时间
+
+                partyTime:'',//转正时间
+
                 political:'',
                 time:null,
                 pageIndex:1
@@ -278,6 +304,8 @@ export default {
         let res = getTitle();
         this.listTitle = res.listTitle;
         this.tableTitle = res.tableTitle;
+        this. formList = formList;
+        // console.log('formList:',formList);
     },
     // computed:{
     //     itemTotal: function () {
@@ -312,7 +340,11 @@ export default {
             let res = await fetchData(searchObj);
             console.log('res:',res)
 
-            this.showDate.tableDateShow = res.list;
+            //对返回的 res.list 数据进行转换,即将
+            this.showDate.tableDateShow = dateTranfer(res.list);
+
+            //
+
             this.showDate.pageIndex = res.pageIndex;
             this.showDate.pageSize = res.pageSize;
             this.showDate.itemTotal = res.itemTotal;
@@ -321,7 +353,7 @@ export default {
 
             this.$nextTick(()=>{
                 for(let i=0;i<this.showDate.tableDateShow.length;i++){
-                    if(this.selectedItem[this.showDate.tableDateShow[i].id]){
+                    if(this.selectedItem[this.showDate.tableDateShow[i].stuId]){
                         this.$refs.multipleTable.toggleRowSelection(this.showDate.tableDateShow[i],true);
                     }
                 }
@@ -349,7 +381,7 @@ export default {
                 await  this.$confirm("确定要删除吗？", "提示", {
                             type: "warning"
                         });
-                await   deltDate([val.id]);
+                await   deltDate([val.stuId]);
                 
                 let obj = {};
                 for(let key in this.query){
@@ -357,7 +389,7 @@ export default {
                 }
                 obj.id = this.searchQuery;
                 this.getDate(obj);
-                this.$message.success(`删除id为 ${val.id} 的同学的信息成功`);
+                this.$message.success(`删除id为 ${val.stuId} 的同学的信息成功`);
 
             }
             catch(e){
@@ -373,14 +405,14 @@ export default {
             let idObj = {};
             console.log('val:',val);
             val.forEach(item=>{
-                idObj[item.id]=true;
+                idObj[item.stuId]=true;
             })
             this.showDate.tableDateShow.forEach(item=>{
-                if(idObj[item.id]){
-                    this.selectedItem[item.id] = true;
-                } else if(this.selectedItem[item.id]){
+                if(idObj[item.stuId]){
+                    this.selectedItem[item.stuId] = true;
+                } else if(this.selectedItem[item.stuId]){
                     console.log('delete')
-                    delete this.selectedItem[item.id];
+                    delete this.selectedItem[item.stuId];
                 }
             })
 

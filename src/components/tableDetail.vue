@@ -4,29 +4,43 @@
         
         <!-- <el-divider style="margin: 5px 0 10px 0;"></el-divider> -->
 
-        <el-form  label-position="left" label-width="auto" id="selectForm" :inline="true"  :style="{ minHeight:minHeight+'px'}">
-            <el-form-item v-for='item in formObj' :label="item.label" :key='item.prop'  size='mini'>
+        <el-form  style="padding: 4px 0 0 5px;"  label-position="right" label-width="160px" id="selectForm" :inline="true" >
+            <el-form-item v-for='item in formObj' :label="item.label" :key='item.prop'  size='mini' >
                <!-- 输入框 -->
-                <el-input v-if="item.type==='Input'" v-model="query[item.prop]" class="el_side_style"  ></el-input>
+                <el-input v-if="item.type==='Input'" v-model="dateItems[item.prop]" class="el_side_style" :disabled="disabled" ></el-input>
                 <!-- 下拉框 -->
-                <el-select v-if="item.type==='Select'" v-model="query[item.prop]"  class="el_side_style"  >
-                    <el-option v-for="op in item.options" :label="op.label" :value="op.value" :key="op.value" ></el-option>
+                <el-select v-if="item.type==='Select'" v-model="dateItems[item.prop]"  class="el_side_style" :disabled="disabled">
+                    <el-option v-for="op in item.options" :label="op.label" :value="op.value" :key="op.value" class="el_side_style"></el-option>
                 </el-select>   
                 <!-- 年月日 -->
-                <el-date-picker  v-if="item.type==='YMR'" :default-value="item.default_time" v-model="query[item.prop]" style="width:130px;font-size:smaller" class="el_side_style"></el-date-picker>
+                <el-date-picker  v-if="item.type==='YMR'" :default-value="item.default_time" v-model="dateItems[item.prop]" :disabled="disabled" style="width:130px;font-size:smaller" class="el_side_style"></el-date-picker>
                 <!-- 年月 -->
                 <el-date-picker
                   v-if="item.type==='YM'"
-                  v-model="query[item.prop]"
+                  v-model="dateItems[item.prop]"
                   type="month"
                   placeholder="选择月"
+                  :disabled="disabled"
                   style="width:120px;font-size:smaller" class="el_side_style"
                   >
                 </el-date-picker>
+
+                <!-- 年月日选择区间 -->
+                <el-date-picker
+                    v-if="item.type==='YMDArea'"
+                    v-model="dateItems[item.prop]"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="开始日期"
+                    end-placeholder="结束日期"
+                    :disabled="disabled"
+                    style="width:200px;font-size:smaller" class="el_side_style">
+                </el-date-picker>
+
                 <!-- 月份选择区间    -->
                 <el-date-picker
                     v-if="item.type==='YMArea'"
-                    v-model="query[item.prop]"
+                    v-model="dateItems[item.prop]"
                     type="monthrange"
                     align="right"
                     unlink-panels
@@ -34,10 +48,29 @@
                     start-placeholder="开始月份"
                     end-placeholder="结束月份"
                     :shortcuts="shortcuts"
-                    style="width:180px;font-size:smaller" class="el_side_style"
+                    :disabled="disabled"
+                    style="width:130px;font-size:smaller" class="el_side_style"
                 >
+                
+
                 </el-date-picker>
 
+                <!-- 省市区三级联动（带"全部"选项） -->
+                <el-cascader
+                    v-if="item.type==='pccA'"
+                    :options="options0"
+                    v-model="dateItems[item.prop]"
+                    :disabled="disabled"
+                    style="width:240px;font-size:12px;" class="el_side_style">
+                </el-cascader>
+                <!-- 省市区三级联动（不带"全部"选项） -->
+                <el-cascader
+                  v-if="item.type==='pcc'"
+                  :options="options1"
+                  v-model="dateItems[item.prop]"
+                  :disabled="disabled"
+                  style="width:240px;font-size:12px;" class="el_side_style">
+                </el-cascader>
             </el-form-item>
         </el-form>
         <!-- <el-form inline>
@@ -53,6 +86,7 @@
 
 </template>
 <script>
+import { regionData,regionDataPlus } from 'element-china-area-data'
 export default{
     props:{
         formObj:{
@@ -77,19 +111,31 @@ export default{
                 return arr;
             }
         },
-        minHeight:{
-            type:Number,
-            default:70
+       
+        //绑定数据
+        content: {
+            type:Object,
+            default:function(){
+                return{}
+            }
+        },
+        disabled:{
+            type:Boolean,
+            default:false
         }
+
     },
     created(){
-        this.formObj.forEach(item=>{
-            this.query[item.prop] = "";
-        })
+        // this.formObj.forEach(item=>{
+        //     this.query[item.prop] = "";
+        // })
+        this.dateItems = this.content;
     },
 
     data(){
        return {
+           options0:regionDataPlus,
+           options1: regionData,
             shortcuts: [{
               text: '本月',
               value: [new Date(), new Date()],
@@ -110,9 +156,9 @@ export default{
                 return [start, end]
               })(),
             }],
-            //筛选表单
-            //筛选/搜索数据时的条件
-            query: {},
+
+            dateItems:{},
+            
        }
     },
     computed:{
@@ -141,5 +187,18 @@ export default{
     margin-top: 0px;
     /* outline: 1px solid red; */
 }
+.el_side_style:deep(.el-input__inner){
+    color:black;
+}
 
+
+</style>
+
+
+<style>
+/* 写在这个style中的内容一定要注意，会影响所有的组件中的样式，一定要慎用 */
+    /* 这里我确实希望所有disabled属性为true的表单都会是这样的，因此这样写合理 */
+    .el-input.is-disabled .el-input__inner{
+        color:black;
+    }
 </style>
