@@ -53,6 +53,8 @@
 
 </template>
 <script>
+import {inFormToNone} from "../api/formDate.js"
+
 export default{
     props:{
         formObj:{
@@ -116,8 +118,82 @@ export default{
        }
     },
     computed:{
+        
     },
     methods:{
+        resetQuery(obj){
+            Object.keys(this.query).forEach(item=>{
+                if(Object.prototype.hasOwnProperty.call(obj,item)){
+                    this.query[item] = obj[item];
+                }
+            });
+
+        },
+        getQuery(){
+            let rnQuery = {};
+            let YMR = [], YM = [], YMArea = [];
+            
+            Object.keys(this.query).forEach(item=>{
+                if(item!=='YMR'&&item!=='YM'&&item!=='YMArea'){
+                    rnQuery[item] = this.query[item];
+                }else {
+                    rnQuery[item] = "";
+                }
+            })
+
+            this.formObj.forEach(item=>{
+                if(item.type === 'YMR'){
+                    YMR.push(item.prop);
+                } else if(item.type === 'YM'){
+                    YM.push(item.prop);
+                }else if(item.type === 'YMArea'){
+                    YMArea.push(item.prop);
+                }
+            });
+
+            YMR.forEach(item=>{
+                let val = this.query[item];
+                if(val instanceof Date){
+                     let y = val.getFullYear(), m=val.getMonth()+1, d=val.getDate();
+                    if(m<=9)m = "0" + m;
+                    if(d<=9)d="0"+d;
+                    rnQuery[item] = y + m + d;
+                }
+            });
+
+            YM.forEach(item=>{
+                let val = this.query[item];
+                if(val instanceof Date){
+                     let y = val.getFullYear(), m=val.getMonth()+1;
+                    if(m<=9)m = "0" + m;
+                    rnQuery[item] = y + m;
+                }
+            });
+            
+            YMArea.forEach(item=>{
+                let val = this.query[item];
+                if(val instanceof Array){
+                    rnQuery[item] = [];
+                    let val1,val2,y,m;
+                    val1 = val[0];
+                    y = val1.getFullYear();
+                    m=val1.getMonth()+1;
+                    if(m<=9)m = "0" + m;
+                    rnQuery[item][0] = y + m + '01';
+
+                    val2 = val[1];
+                    y = val2.getFullYear();
+                    m=val2.getMonth()+1;
+                    if(m<=9)m = "0" + m;
+                    rnQuery[item][1] = y + m + '31';
+                }
+            });
+
+            // 将query中值为0的 下拉框 对应的值由0值，置为''
+            inFormToNone(rnQuery);
+            // console.log('getFormQuery:',rnQuery)
+            return rnQuery;
+        }
     }
 }
 </script>

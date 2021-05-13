@@ -1,3 +1,5 @@
+import {  CodeToText, TextToCode } from 'element-china-area-data/dist/app.commonjs';
+
 let formDate = {
     gender:{0:'全部',1:'男',2:'女'},
     national:{0:'全部',1:'汉族',2:'满族',3:'壮族'},
@@ -9,6 +11,15 @@ let formDate = {
     isApplay:{0:'全部',1:'是',2:'否'},
     actvTrainResult:{0:'全部',1:'优秀',2:'及格',3:'不及格'},
     devTrainResult:{0:'全部',1:'优秀',2:'及格',3:'不及格'},
+}
+
+function inFormToNone(obj){
+    Object.keys(formDate).forEach(item=>{
+        if(obj[item]==='0'){
+            obj[item]='';
+        }
+    })
+
 }
 
 /**
@@ -24,6 +35,74 @@ function dateTranfer(list){
                 list[i][item] = formDate[item][list[i][item]];
             }
         })
+    }
+    return list;
+
+    
+}
+
+/**
+ * 用来将对象数组list中的属性值由汉字变成对应数字，如gender:'男' 变为 gender:'1'
+ * @param {Array} list ,数组list中的每一项都为一个对象
+ * @returns 
+ */
+ function dateBack(list){
+    for(let i=0;i<list.length;i++){
+        let obj = list[i];
+        Object.keys(obj).forEach((item)=>{
+            if(formDate[item]){
+                Object.keys(formDate[item]).forEach(k=>{
+                    if(list[i][item] === formDate[item][k]){
+                        list[i][item] = k;
+                    }
+                })
+            }
+        })
+    }
+    return list;
+}
+
+
+//省市区三级区域码转地址
+// 数组list中的每一项都为一个对象
+function ptdToAddress(list){
+    let rs = "";
+
+    for(let i=0;i<list.length;i++){ 
+        //codeArr是一个长度为3的数组分别是省市区的区域码，["130000","130300","130303"]，这里会转成 河北省/秦皇岛市/山海关区
+        if(Object.prototype.hasOwnProperty.call(list[i],'home')){
+            let codeArr = list[i]['home'];
+            rs = "";
+
+            codeArr.forEach(item=>{
+                //注意一定要有'/'，目的是为了方便导入表格
+                rs += CodeToText[item]+"/";
+            })
+            rs = rs.slice(0,rs.length-1);
+            list[i]['home'] = rs;
+        }
+        
+    }
+    return list;
+}
+//省市区三级区地址转区域码，例如：河北省/秦皇岛市/山海关区 转成 ["130000","130300","130303"]
+// 数组list中的每一项都为一个对象
+
+function addressToPtd(list){
+    let rs = [];
+
+    for(let i=0;i<list.length;i++){ 
+        if(Object.prototype.hasOwnProperty.call(list[i],'home')){
+            //codeArr是一个长度为3的数组分别是省市区的区域码，["130000","130300","130303"]，这里会转成 河北省/秦皇岛市/山海关区
+            let addr = list[i]['home'].split('/');
+            rs = [];
+            rs.push(TextToCode[addr[0]]);
+            rs.push(TextToCode[addr[0]][addr[1]]);
+            rs.push(TextToCode[addr[0]][addr[1]][addr[2]]);
+
+            list[i]['home'] = rs;
+        }
+        
     }
     return list;
 }
@@ -75,8 +154,8 @@ let tableDetail = [
     {label:'民族',prop:'national',type:'Select',options:[]},
     {label:'身份证',prop:'idCard',type:'Input'},
     {label:'出生日期',prop:'birthday',type:'YMR'},
-    {label:'年级',prop:'grade',type:'Input'},
-    {label:'班级',prop:'class',type:'Input'},
+    {label:'年级',prop:'grade',type:'Select',options:[]},
+    {label:'班级',prop:'class',type:'Select',options:[]},
     {label:'学历',prop:'proED',type:'Select',options:[]},
     {label:'导师',prop:'tutor',type:'Input'},
     {label:'所处阶段',prop:'stage',type:'Select',options:[]},
@@ -98,8 +177,9 @@ let applyStage = [
 let actvStage = [
     {label:'团推优时间',prop:'electLeagueTime',type:'YMR'},
     {label:'确定积极分子时间',prop:'actvTime',type:'YMR'},
-    {label:'积极分子培训时间',prop:'actvTrainTime',type:'YMR'},
-    {label:'积极分子培训班结业情况',prop:'actvTrainResult',type:'YMR'},
+    {label:'积极分子培训班结业情况',prop:'actvTrainResult',type:'Select',options:[]},
+    {label:'积极分子培训时间',prop:'actvTrainTime',type:'YMDArea'},
+
 ];
 //发展对象的确定和考察阶段
 let devStage = [
@@ -152,35 +232,89 @@ let formList = {
     candidateForm: candidateForm,
     partyForm:partyForm
 }
-function setOptionsToFormDate(arr){
-    for(let i=0;i<arr.length;i++){
-        let item = arr[i];
+function setOptionsToFormDate(arr,type=0){
+    for(let j=0;j<arr.length;j++){
+        let item = arr[j];
         let prop = item['prop'];
         if(item['type']==='Select'&&formDate[prop]){
             let keys = Object.keys(formDate[prop]);
-            keys.forEach(k=>{
-                let optionsObj = {};
+            let i = 0;
+            if(type===1) i=1;
+            for(;i<keys.length;i++){
+                let optionsObj = {}, k = keys[i];
                 optionsObj['value'] = k;
                 optionsObj['label'] = formDate[prop][k];
-                arr[i].options.push(optionsObj);
-            })
+                arr[j].options.push(optionsObj);
+            }
         }
     }   
 }
-function setFormDateOptions(list){
+function setFormDateOptions(list,type=0){
     let keys = Object.keys(list);
     for(let i=0;i<keys.length;i++){
-        setOptionsToFormDate(list[keys[i]]); 
+        setOptionsToFormDate(list[keys[i]],type); 
     }
 }
 
 setFormDateOptions(formList);
-setFormDateOptions(tableForm);
+setFormDateOptions(tableForm,1);
 
 
-export {formList,tableForm,dateTranfer}
+export {formList,tableForm,dateTranfer,inFormToNone,listMap,ptdToAddress,addressToPtd,dateBack}
 
 
-// {value:'',label:'全部'},{value:'1',label:'是'},{value:'2',label:'否'}
+var listMap = {
+    stuId:"学号",
+    name:'姓名',
+    gender:'性别',
+    phone:'联系方式',
+    national:'民族',
+    home:"籍贯",
+    idCard:'身份证',
+    birthday:'出生日期',//出生日期
+    grade:'年级',//年级
+    class:'班级',//班级
+    proED:'学历',//学历
+    tutor:'导师',//导师
+    stage:'所处阶段',//所处阶段
+    bedroom:'寝室',//寝室
+    duty:'职务',//职务
+    branch:'所在支部',//所在支部
+    pTeacher:'培养联系人',//培养联系人
+    leader:'入党介绍人',//入党介绍人
+    applyFileNumber:'入党志愿书编号',//入党志愿书编号
+    // 申请入党阶段
+    applyTime:'申请入党时间',//申请入党时间
+    talkTime:'谈心谈话时间',//谈心谈话时间
+    //入党积极分子的确定和培养阶段
+    electLeagueTime:'团推优时间',//团推优时间
+    actvTime:'确定积极分子时间',//确定积极分子时间
+    actvTrainTime:'积极分子培训时间',//积极分子培训时间
+    actvTrainResult:'积极分子培训班结业情况',//积极分子培训班结业情况
+    //发展对象的确定和考察阶段
+    devTime:'确定发展对象时间',//确定发展对象时间
+    devTrainTime:'发展对象培训时间',//发展对象培训时间
+    devTrainResult:'发展对象培训班结业情况',//发展对象培训班结业情况
+    classRank:'业务课排名',//业务课排名
+    extFileTime:'外调材料日期',//外调材料日期
+    polFileTime:'政审材料日期',//政审材料日期
+    candidateTime:'拟发展时间',//拟发展时间
+    hPartyPreCheckTime:'发展党员上级党委预审日期',//发展党员上级党委预审日期
+    pubTime:'公示日期',//公示日期
+    // 预备党员的接收阶段
+    jnTime:'入党时间',//入党时间
+    aPartyCheckTime:'入党总支审查日期',//入党总支审查日期
+    hPartyTalkTime:'发展党员上级组织谈话日期',//发展党员上级组织谈话日期
+    hPartyPassTime:'入党上级党委审批日期',//入党上级党委审批日期
+    // 预备党员的教育考察和转正阶段
+    confirmTime:'转正时间',//转正时间
+    partyConfirmTime:'转正总支审查日期',//转正总支审查日期
+    hPartyConfirmTime:'转正上级党委审批日期',//转正上级党委审批日期
+    delayReadyTime:'延长预备期日期',//延长预备期日期
+    delayCheckTime:'延长预备期总支审查日期',//延长预备期总支审查日期
+    delayConfirmTime:'延长预备期党委审批日期',//延长预备期党委审批日期
+    note:'备注',//
+};
+
 
 

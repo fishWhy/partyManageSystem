@@ -15,7 +15,7 @@
                 <el-header  height="auto">
                     <el-container>
                         <el-aside width="80px" style="margin"><el-tag type="success" style="font-size:14px;">基础搜索</el-tag></el-aside>
-                        <el-main id="searchBaseMain" style="padding: 4px 0 0 5px;"><search-form :formObj="formList.baseForm" :minHeight="70"></search-form></el-main>
+                        <el-main id="searchBaseMain" style="padding: 4px 0 0 5px;"><search-form :formObj="formList.baseForm" :minHeight="70" ref="baseForm"></search-form></el-main>
                     </el-container>
                     <!-- <el-divider style="margin: 5px 0 5px 0"></el-divider> -->
 
@@ -25,11 +25,11 @@
                                  <el-aside width="80px" style="margin"><el-tag type="success" style="font-size:14px;">高级搜索</el-tag></el-aside>
                             </template>
                             <el-tabs v-model="activeName" type="card" id="el_tabs314" style="padding:0 0 0 20px">
-                                <el-tab-pane label="提交申请" name="apply" class="el_tab_pane314"><search-form  :formObj="formList.applyForm" :minHeight="40"></search-form></el-tab-pane>
-                                <el-tab-pane label="积极分子" name="activist" class="el_tab_pane314"><search-form :formObj="formList.activistForm" :minHeight="40"></search-form></el-tab-pane>
-                                <el-tab-pane label="发展对象" name="develop" class="el_tab_pane314"><search-form :formObj="formList.developForm" :minHeight="40"></search-form></el-tab-pane>
-                                <el-tab-pane label="预备党员" name="candidate" class="el_tab_pane314"><search-form :formObj="formList.candidateForm" :minHeight="40"></search-form></el-tab-pane>
-                                <el-tab-pane label="正式党员" name="party" class="el_tab_pane314"><search-form :formObj="formList.partyForm" :minHeight="40"></search-form></el-tab-pane>
+                                <el-tab-pane label="提交申请" name="apply" class="el_tab_pane314"><search-form  :formObj="formList.applyForm" :minHeight="40" ref="applyForm"></search-form></el-tab-pane>
+                                <el-tab-pane label="积极分子" name="activist" class="el_tab_pane314"><search-form :formObj="formList.activistForm" :minHeight="40" ref="activistForm"></search-form></el-tab-pane>
+                                <el-tab-pane label="发展对象" name="develop" class="el_tab_pane314"><search-form :formObj="formList.developForm" :minHeight="40" ref="developForm"></search-form></el-tab-pane>
+                                <el-tab-pane label="预备党员" name="candidate" class="el_tab_pane314"><search-form :formObj="formList.candidateForm" :minHeight="40" ref="candidateForm"></search-form></el-tab-pane>
+                                <el-tab-pane label="正式党员" name="party" class="el_tab_pane314"><search-form :formObj="formList.partyForm" :minHeight="40" ref="partyForm"></search-form></el-tab-pane>
                             </el-tabs>
                         </el-collapse-item>
                     </el-collapse>
@@ -114,11 +114,11 @@
            
         </div>
 
-         <!-- 编辑弹出框 -->
-        <el-dia :visible="editVisible" :formDate="form" :title="编辑" @saveDia="saveEdit" @cancle="cancleEdit"></el-dia>
+         <!-- 编辑弹出框
+        <el-dia :visible="editVisible" :formDate="form" :title="编辑" @saveDia="saveEdit" @cancle="cancleEdit"></el-dia> -->
 
-        <!-- 添加新用户 -->
-        <el-dia :visible="addVisible" :formDate="form" :title="添加新用户" @saveDia="saveAdd" @cancle="cancleAdd"></el-dia>
+        <!-- 添加新用户
+        <el-dia :visible="addVisible" :formDate="form" :title="添加新用户" @saveDia="saveAdd" @cancle="cancleAdd"></el-dia> -->
 
                
        
@@ -129,8 +129,7 @@
                 <div>
                     <el-tag>导入Excel格式要求</el-tag>
                     <div style="margin-top:10px">
-                        导入的Excel要包含：学号、姓名、性别、民族、生日、支部、学历、班级和所处阶段 这几个类别。
-                        
+                        导入的Excel时,籍贯一定要加/(如:河北省/秦皇岛市/山海关区),否则会导入错误。
                         <span style="color:red" >具体格式可见模板下载按钮中的例子。</span>
                          <el-button type="danger" icon="el-icon-download" @click="getExcelTemplate" size="mini">模板下载</el-button>
                     </div>
@@ -180,23 +179,35 @@
             </template>
         </el-dialog>
 
+
+
     </div>
 </template>
 
 <script>
 // import { fetchData,setNewData } from "../api/index";
-import {addDate,cInfor,deltDate,fetchData,setNewData,isInDate,getTitle,downDate} from "../api/index";
-import {importfxx} from "../utils/excel/upDownExcel.js";
-import {formList,dateTranfer} from "../api/formDate.js"
-
-import el_dialog from "../components/el_dialog.vue"
+import {addDate,deltDate,fetchData,setNewData,downDate,loadDateFromExcel} from "../api/index";
+import {formList,dateTranfer,listMap} from "../api/formDate.js"
+// 
+// import el_dialog from "../components/el_dialog.vue"
 import searchForm from "../components/searchForm.vue"
+import {useRouter, useRoute} from 'vue-router'
+
 
 export default {
     name: "basetable",
     components:{
-        ElDia:el_dialog,
+        // ElDia:el_dialog,
         SearchForm:searchForm
+    },
+    activated(){
+        this.getData();
+    },
+     setup(){
+        const router = useRouter();
+        const route = useRoute();
+
+        return {router,route}
     },
     data() {
         return {
@@ -206,54 +217,40 @@ export default {
             activeName:'apply',
             //筛选/搜索数据时的条件
             query: {
+                // baseForm
                 stuId: "",
                 name: "",
                 gender:'',
-                // birthday:null,
                 national:'',//民族
                 branch:'',//支部
                 age:'',
-                // major:'',
                 proED:'',//学历
                 class:'',
                 tutor:'',//导师
                 stage:'',//所处阶段
 
+                // applyForm
                 isApplay:'',//是否提交申请书
 
+                // activistForm
+                actvTime:'',
                 actvTrainTime:'',//积极分子培训班时间
                 actvTrainResult:'',//培训班结业情况
 
+                // developForm
                 devTime:'',//确定发展对象时间
                 devTrainTime:'',//发展对象培训时间
                 devTrainResult:'',//培训班结业情况
 
+                // candidateForm
                 candidateTime:'',//入党时间
-
+                // partyForm
                 partyTime:'',//转正时间
 
                 political:'',
-                time:null,
+
                 pageIndex:1
             },
-
-
-            
-            //新增用户或编辑用户信息的Dialog对话框对应数据
-            form: {
-                id: "",
-                name: "",
-                gender:'',
-                birthday:'',
-                major:'',
-                proED:'',
-                political:'',
-                time:'',
-            },
-
-            // 编辑用户信息对应的行
-            idx: -1,
-            editVisible: false,
 
 
             id: -1,
@@ -261,8 +258,8 @@ export default {
            
 
             //文件导出
-            listTitle:'',
-            tableTitle:'',
+            listTitle:[],
+            tableTitle:[],
 
             //文件导入
             fileTemp:'',
@@ -297,15 +294,23 @@ export default {
             // 设置一个锁，防止换页时自动更改selectedItem
             selectedItemLock:false,
 
+            attriShow:["stuId","name","gender","national","birthday","branch","proED","grade","class","stage"],
+
         };
     },
     created() {
-        this.getDate();
-        let res = getTitle();
-        this.listTitle = res.listTitle;
-        this.tableTitle = res.tableTitle;
+        this.getData();
         this. formList = formList;
-        // console.log('formList:',formList);
+
+        this.listTitle = Object.keys(listMap);
+        
+        this.listTitle.forEach(item=>{
+            this.tableTitle.push(listMap[item]);
+        })
+
+        console.log('CreatlistTitle:',this.listTitle);
+        console.log('CreattableTitle:',this.tableTitle);
+
     },
     // computed:{
     //     itemTotal: function () {
@@ -320,28 +325,18 @@ export default {
     },
     methods: {
         // 获取 easy-mock 的模拟数据
-        async getDate(searchObj = this.query) {
-            // 转换日期的格式到 Y-M-D格式
-            if(searchObj.birthday instanceof Date){
-                let y = searchObj.birthday.getFullYear(),m=searchObj.birthday.getMonth()+1,d=searchObj.birthday.getDate();
-                if(m<=9)m = "0" + m;
-                if(d<=9)d="0"+d;
-                searchObj.birthday = y + '-' + m + '-' + d;
-            }
-            if(searchObj.time instanceof Date){
-                let y = searchObj.time.getFullYear(),m=searchObj.time.getMonth()+1,d=searchObj.time.getDate();
-                if(m<=9)m = "0" + m;
-                if(d<=9)d="0"+d;
-                searchObj.time = y + '-' + m + '-' + d;
-            }
+        async getData(searchObj = this.query) {
+            
             // this.query.indexPage = 0;
-            console.log('fetchData:',searchObj);
+            // console.log('fetchData:',searchObj);
             
             let res = await fetchData(searchObj);
-            console.log('res:',res)
+            // console.log('res:',res)
 
             //对返回的 res.list 数据进行转换,即将
             this.showDate.tableDateShow = dateTranfer(res.list);
+            // this.showDate.tableDateShow = res.list;
+
 
             //
 
@@ -367,7 +362,7 @@ export default {
             this.query.pageIndex = val;
             //this.selectedItemLock起到加锁的作用，防止在更改表格数据时触发该函数，误更改this.selectedItem
             this.selectedItemLock = true;
-            this.getDate(this.query);
+            this.getData(this.query);
 
         },
         
@@ -388,7 +383,7 @@ export default {
                     obj[key]=this.query[key];
                 }
                 obj.id = this.searchQuery;
-                this.getDate(obj);
+                this.getData(obj);
                 this.$message.success(`删除id为 ${val.stuId} 的同学的信息成功`);
 
             }
@@ -437,7 +432,7 @@ export default {
                 this.selectedItemLock = false;
 
                 //重新获取数据
-                this.getDate(this.query);
+                this.getData(this.query);
                 this.$message.success(`${str}被成功删除`)
 
 
@@ -453,106 +448,47 @@ export default {
         // 编辑用户信息
         // 编辑操作
         handleEdit(index, row) {
+            this.router.push({path:'/home/form',query:{stuId:row.stuId}})
 
-            for(let key in this.form){
-                this.form[key]="";
-            }
-            this.idx = index;
-            console.log('row:',row);
-            //注意这里一定要深拷贝一次。
-            this.form = JSON.parse(JSON.stringify(row));
+            // for(let key in this.form){
+            //     this.form[key]="";
+            // }
+            // this.idx = index;
+            // console.log('row:',row);
+            // //注意这里一定要深拷贝一次。
+            // this.form = JSON.parse(JSON.stringify(row));
 
-            if(this.form.birthday){
-                this.form.birthday = new Date(this.form.birthday);
-            }
-            if(this.form.time){
-                this.form.time = new Date(this.form.time);
-            }
+            // if(this.form.birthday){
+            //     this.form.birthday = new Date(this.form.birthday);
+            // }
+            // if(this.form.time){
+            //     this.form.time = new Date(this.form.time);
+            // }
 
-            this.editVisible = true;
-            console.log('the new of edit form: ',this.form);
+            // this.editVisible = true;
+            // console.log('the new of edit form: ',this.form);
         },
-        // 保存编辑
-        async saveEdit(rData) {
-
-            try{
-                console.log("当前页面第几行",this.idx);
-                //将数据提交给后台
-                await cInfor(rData);
-
-                //传给后台成功后，更改本页面中的对应数据
-                this.showDate.tableDateShow[this.idx] = rData;
-                this.editVisible = false;
-
-
-                this.$message.success(`修改id为 ${rData.id} 的同学的信息成功`);
-            }catch(e){
-                this.$message.error(`修改id为 ${e} 的同学的信息失败`);
-            }
-
-
-            
-
-            
-        //     this.editVisible = false;
-        //     this.$message.success(`修改第 ${this.idx + 1} 行成功`);
-        //     this.$set(this.tableData, this.idx, this.form);
-        },
-        //取消修改
-        cancleEdit(){
-            this.editVisible = false;
-            for(let key in this.form){
-                this.form[key] = "";
-            }
-        },
-
-
-
-
 
 
         //添加新用户
-        handleAdd(){
-            this.form = {}
-            this.addVisible = true;
-        },
-
-        // 保存新用户
-        async saveAdd(rDate) {
-
-            //首先，检查新添加的用户是否已经存在，如果存在就提示用户
-            if(isInDate(rDate.id)){
-                this.$message.error(`添加的用户已存在，添加失败`);
-                return;
-            }
-
-            //添加用户
-            //根据返回结果提示用户是否添加成功
+        async handleAdd(){
             try{
-                let arr = [rDate];
-                await addDate(arr);
-
+                await  this.$confirm("确定要新增用户吗？", "提示", {
+                            type: "warning"
+                        });
+                this.router.push({path:'/home/form',query:{isDisabled:false}});
                 
-                this.addVisible = false;
-
-                if(this.showDate.tableDateShow.length < this.showDate.pageSize){
-                    this.showDate.tableDateShow.push(rDate);
-                }
-                this.showDate.itemTotal++;
-
-                this.$message.success(`添加新用户成功`);
             }catch(e){
-                this.$message.error(`添加的用户失败`);
-            }            
-           
-        },
-        // 取消添加用户
-        cancleAdd(){
-            this.addVisible = false;
-            for(let key in this.form){
-                this.form[key] = "";
+                console.log(e);
             }
+
+
+            // this.form = {}
+            // this.addVisible = true;
         },
+
+        
+       
 
 
 
@@ -561,28 +497,49 @@ export default {
 
         // 重置this.query，查询所有的数据
         resetQueryData(){
-            for(let key in this.query){
-                this.query[key] = "";
+            let keys = Object.keys(this.query);
+            let pageIndex = this.query.pageIndex;
+            for(let i=0;i<keys.length;i++){
+                this.query[keys[i]]="";
             }
+            this.query.pageIndex = pageIndex;
+
+            this.$refs.baseForm.resetQuery(this.query);this.$refs.applyForm.resetQuery(this.query);
+            this.$refs.activistForm.resetQuery(this.query);this.$refs.developForm.resetQuery(this.query);
+            this.$refs.candidateForm.resetQuery(this.query);this.$refs.partyForm.resetQuery(this.query);
+
             this.getData(this.query);
         },
         // 按照this.query的筛选条件要求，查询数据
         requeryData(){
+            this.query = this.rnQuery();
+
+            // console.log("query",this.query);
             this.getData(this.query);
+        },
+        rnQuery(){
+            return Object.assign(this.query,
+            this.$refs.baseForm.getQuery(),
+            this.$refs.applyForm.getQuery(),
+            this.$refs.activistForm.getQuery(),
+            this.$refs.developForm.getQuery(),
+            this.$refs.candidateForm.getQuery(),
+            this.$refs.partyForm.getQuery()); 
         },
 
 
         //excel导入导出操作
         //下载excel
         getExcel(){
-            let obj = {type:1,date:[]}
+            let that = this;
+            let obj = {type:0,  listTitle: that.listTitle,  tableTitle: that.tableTitle}
             downDate(obj);
         },
 
         //导入excel
         handleExcelChange(_,fileList){
             this.fileList = fileList;
-            console.log('fileList',this.fileList.length);
+            console.log('fileListUped',this.fileList);
         },
         handleBeforeRemove(file){
             return this.$confirm(`确定移除 ${ file.name }？`);
@@ -599,36 +556,18 @@ export default {
         
         },
         async  saveUploadExcel(){
-                let tableArray = [];
-                let _data = [];
                 if(!this.fileList) return;
-                // console.log('fileList',this.fileList.length);
+                // console.log('fileListSaveUploadExcel:',this.fileList);
+                let filesObj = {};
+                filesObj.fileList = this.fileList;
+                filesObj.listTitle= this.listTitle;
+                filesObj.tableTitle= this.tableTitle;
 
-                for(let i=0;i<this.fileList.length;i++){
-                    try{
-                        _data = await importfxx(this.fileList[i].raw,this.listTitle,this.tableTitle);
-                        
-                        //》》》》这里其实涉及到一个问题，我们通过importfxx从表格获取的数据不一定都是字符串类型的数据，
-                        _data.forEach(item=>{
-                            for(let k in item){
-                                if(Object.prototype.hasOwnProperty.call(item,k)){
-                                    item[k] = item[k]+'';
-                                }
-                            }
-                        })
-                        _data = this.arrUni(_data);
-                        tableArray = tableArray.concat(_data);
-                        // tableArray = this.arrUni(tableArray);
-                        
-                    } catch(e){
-                        this.$message({
-                            type:'warning',
-                            message: e
-                        });
-                    }
-                }
-                console.log('tableArray',tableArray)
-                console.log('impExcel:',this.impExcel)
+                
+
+                let tableArray = loadDateFromExcel(filesObj);
+                console.log('tableArray:',tableArray)
+                
 
                  
                 try{
@@ -639,17 +578,10 @@ export default {
                         await addDate(tableArray);
                     }
 
-                    for(let key in this.query){
-                        this.query[key] = "";
-                    }
+                    
 
                     //更新当前页面的内容
-                    let obj = {};
-                    for(let key in this.query){
-                        obj[key]="";
-                    }
-                    obj.pageIndex = 1;
-                    this.getDate(obj);
+                    this.resetQueryData();
                     this.importVisible = false; 
                                   
 
@@ -663,26 +595,12 @@ export default {
                 
                 
         },
-        //数组去重
-        arrUni(arr){
-            if(!arr||arr.length===0) return [];
-            
-            for(let i=arr.length-1;i>0;i--){
-                let val = arr[i];
-                for(let j=i-1;j>=0;j--){
-                    if(val.id===arr[j].id){
-                        arr[j] = val;
-                        arr.splice(i,1);
-                        break;
-                    }
-                }
-            }
-            return arr;
-        },
+        
         //下载excel模板
         getExcelTemplate(){
-            let obj = {type:1,date:[]}
-            obj.date = [{id:1871172,name:'胡亮',gender:'男',birthday:"1997-06-07",major:'软件工程',proED:'研究生',political:'党员',time:'2019-10-1'}];
+            let that = this;
+            let obj = {type:0,  listTitle: that.listTitle,  tableTitle: that.tableTitle}
+            
             downDate(obj);
         },
         deleteAllUpload(){

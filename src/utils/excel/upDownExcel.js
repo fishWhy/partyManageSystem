@@ -8,6 +8,8 @@ import {export_json_to_excel,formatJson} from "./Export2Excel.js";
  *@param  listTitle 为要显示在页面中的表头，这里要将tableTitle转换成listTitle的样式 
  */
 function downLoadExcel(tableData,listTitle,tableTitle,fileName){
+   
+
     const _data = formatJson(listTitle,tableData);
     export_json_to_excel(tableTitle,_data,fileName);
 }
@@ -40,15 +42,19 @@ function importfxx(obj,listTitle,tableTitle) {
                     //检查导入的表格中的数据是否符合格式的要求，只检测表头是否符合要求
                     for(let i=0;i<data.length;i++){
                         let _objKeys = Object.keys(data[i]);
+                        // console.log('_objKeys:',_objKeys);
+                        // console.log('_tableTitle::',tableTitle);
+
                         if(_objKeys.length===tableTitle.length){
                             tableTitle.forEach(item=>{
                                 if(_objKeys.indexOf(item)===-1){
-                                   reject(`文件《${data[i].name}》内容格式错误，请删除后重新上传！`);
+                                    console.log('the item is',item);
+                                //    reject(`1.文件《${data[i].name}》内容格式错误，${item},请删除后重新上传！`);
                                     return;
                                 }
                             })
                         }else{
-                            reject(`文件《${obj.name}》内容格式错误，请删除后重新上传！`);
+                            reject(`2.文件《${obj.name}》内容格式错误，请删除后重新上传！,${_objKeys.length},${tableTitle.length}`);
                             return;
 
                         }
@@ -73,7 +79,7 @@ function importfxx(obj,listTitle,tableTitle) {
             //     type:'warning',
             //     message:'附件格式错误，请删除后重新上传！'
             // });
-            return Promise.reject(`文件《${obj.name}》的附件格式错误，请删除后重新上传！`)
+            return Promise.reject(`文件《${obj.name}》的附件格式${fileTemp.type}错误，请删除后重新上传！`)
         }
     } else {
         return Promise.reject('请上传附件！')

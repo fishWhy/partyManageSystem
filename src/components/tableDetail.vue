@@ -87,6 +87,8 @@
 </template>
 <script>
 import { regionData,regionDataPlus } from 'element-china-area-data'
+import {inFormToNone} from "../api/formDate.js"
+
 export default{
     props:{
         formObj:{
@@ -164,6 +166,98 @@ export default{
     computed:{
     },
     methods:{
+        getDate(){
+            let rnDate = {};
+            let YMR = [], YM = [], YMArea = [], YMDArea = [];
+            
+            Object.keys(this.dateItems).forEach(item=>{
+                if(item!=='YMR'&&item!=='YM'&&item!=='YMArea'&&item!=='YMDArea'){
+                    rnDate[item] = this.dateItems[item];
+                }else {
+                    rnDate[item] = "";
+                }
+            })
+
+            this.formObj.forEach(item=>{
+                if(item.type === 'YMR'){
+                    YMR.push(item.prop);
+                } else if(item.type === 'YM'){
+                    YM.push(item.prop);
+                }else if(item.type === 'YMArea'){
+                    YMArea.push(item.prop);
+                }else if(item.type === 'YMDArea'){
+                    YMDArea.push(item.prop);
+                }
+            });
+
+            YMR.forEach(item=>{
+                let val = this.dateItems[item];
+                if(val instanceof Date){
+                     let y = val.getFullYear(), m=val.getMonth()+1, d=val.getDate();
+                    if(m<=9)m = "0" + m;
+                    if(d<=9)d="0"+d;
+                    rnDate[item] = y + m + d;
+                }
+            });
+
+            YM.forEach(item=>{
+                let val = this.dateItems[item];
+                if(val instanceof Date){
+                     let y = val.getFullYear(), m=val.getMonth()+1;
+                    if(m<=9)m = "0" + m;
+                    rnDate[item] = y + m;
+                }
+            });
+            
+            YMArea.forEach(item=>{
+                let val = this.dateItems[item];
+                if(val instanceof Array){
+                    rnDate[item] = [];
+                    let val1,val2,y,m;
+                    val1 = val[0];
+                    y = val1.getFullYear();
+                    m=val1.getMonth()+1;
+                    if(m<=9)m = "0" + m;
+                    rnDate[item][0] = y + m + '01';
+
+                    val2 = val[1];
+                    y = val2.getFullYear();
+                    m=val2.getMonth()+1;
+                    if(m<=9)m = "0" + m;
+                    rnDate[item][1] = y + m + '31';
+                }
+            });
+
+            YMDArea.forEach(item=>{
+                let val = this.dateItems[item];
+                if(val instanceof Array){
+                    rnDate[item] = [];
+                    let val1,val2,y,m,d;
+                    val1 = val[0];
+                    y = val1.getFullYear();
+                    m=val1.getMonth()+1;
+                    d=val1.getDate();
+                    if(m<=9)m = "0" + m;
+                    if(d<=9)d="0"+d;
+                    rnDate[item][0] = y + m + d;
+
+                    val2 = val[1];
+                    y = val2.getFullYear();
+                    m=val2.getMonth()+1;
+                    d=val2.getDate();
+                    if(m<=9)m = "0" + m;
+                    if(d<=9)d="0"+d;
+                    rnDate[item][1] = y + m + d;
+                }
+            });
+
+            // 将query中值为0的 下拉框 对应的值由0值，置为''
+            inFormToNone(rnDate);
+            // console.log('getFormQuery:',rnQuery)
+            let rn = JSON.parse(JSON.stringify(rnDate));
+            // console.log('tableDetail:',rn);
+            return rn;
+        }
     }
 }
 </script>

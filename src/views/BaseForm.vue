@@ -6,6 +6,7 @@
                 <div style="float:right;text-align:right;">
                     <el-button type="primary" size="small" style="margin-right:30px" @click="backToTable">返回</el-button>
                     <el-button type="success" size="small" @click="editData">编辑</el-button>
+                    <el-button type="success" size="small" @click="saveEdit">保存</el-button>
                 </div>
             </el-header>
 
@@ -13,9 +14,9 @@
                 <div class="infor baseInfor">
                     <!-- 基本信息 -->
                     <el-container class="inforContainer">
-                        <el-header width="80px" class="inforHead"><el-tag type="success" style="font-size:14px;">基本信息</el-tag></el-header>
+                        <el-header width="80px" class="inforHead"><el-tag type="success" style="font-size:14px;" >基本信息</el-tag></el-header>
                         <el-main class="inforMain">
-                            <table-detail  :formObj="tableDetail" :content="detailContent" :disabled="disabled"></table-detail>
+                            <table-detail  :formObj="tableDetail" :content="detailContent" :disabled="disabled" ref="tableDetail"></table-detail>
                         </el-main>
                     </el-container>
 
@@ -23,7 +24,7 @@
                     <el-container class="inforContainer">
                         <el-header width="80px" class="inforHead"><el-tag type="success" style="font-size:14px;">申请入党阶段</el-tag></el-header>
                         <el-main class="inforMain">
-                            <table-detail  :formObj="applyStage" :content="applyContent" :disabled="disabled"></table-detail>
+                            <table-detail  :formObj="applyStage" :content="applyContent" :disabled="disabled" ref="applyStage"></table-detail>
                         </el-main>
                     </el-container>
 
@@ -31,7 +32,7 @@
                     <el-container class="inforContainer">
                         <el-header width="80px" class="inforHead"><el-tag type="success" style="font-size:14px;">入党积极分子的确定和培养阶段</el-tag></el-header>
                         <el-main class="inforMain">
-                            <table-detail  :formObj="actvStage" :content="actvStageContent" :disabled="disabled"></table-detail>
+                            <table-detail  :formObj="actvStage" :content="actvStageContent" :disabled="disabled" ref="actvStage"></table-detail>
                         </el-main>
                     </el-container>
 
@@ -39,7 +40,7 @@
                     <el-container class="inforContainer">
                         <el-header width="80px" class="inforHead"><el-tag type="success" style="font-size:14px;">发展对象的确定和考察阶段</el-tag></el-header>
                         <el-main class="inforMain">
-                            <table-detail  :formObj="devStage" :content="devStageContent" :disabled="disabled"></table-detail>
+                            <table-detail  :formObj="devStage" :content="devStageContent" :disabled="disabled" ref="devStage"></table-detail>
                         </el-main>
                     </el-container>
 
@@ -47,7 +48,7 @@
                     <el-container class="inforContainer">
                         <el-header width="80px" class="inforHead"><el-tag type="success" style="font-size:14px;">预备党员的接收阶段</el-tag></el-header>
                         <el-main class="inforMain">
-                            <table-detail  :formObj="candidateStage" :content="candidateContent" :disabled="disabled"></table-detail>
+                            <table-detail  :formObj="candidateStage" :content="candidateContent" :disabled="disabled" ref="candidateStage"></table-detail>
                         </el-main>
                     </el-container>
 
@@ -55,7 +56,7 @@
                     <el-container class="inforContainer">
                         <el-header width="80px" class="inforHead"><el-tag type="success" style="font-size:14px;">预备党员的教育考察和转正阶段</el-tag></el-header>
                         <el-main class="inforMain">
-                            <table-detail  :formObj="positiveStage" :content="positiveContent" :disabled="disabled"></table-detail>
+                            <table-detail  :formObj="positiveStage" :content="positiveContent" :disabled="disabled" ref="positiveStage"></table-detail>
                         </el-main>
                     </el-container>
 
@@ -70,15 +71,36 @@ import  tableDetail from "../components/tableDetail.vue"
 
 
 import {tableForm} from "../api/formDate.js"
-import func from 'vue-editor-bridge';
+import {useRouter, useRoute} from 'vue-router'
 // dateTranfer
 
+import {fetchDataByStuId,cInfor, addDate,isInDate} from "../api/index";
+// addDate,cInfor,fetchData,
 
 export default {
     components:{
         TableDetail:tableDetail
     },
+    setup(){
+        const router = useRouter();
+        const route = useRoute();
+
+        return {router,route}
+    },
     created(){
+        console.log('stuId',this.route.query.stuId,this.route.query.isDisabled);
+        if(this.route.query.isDisabled==="false"){
+            this.disabled = false;
+            this.status = 2;//表示 添加用户的状态
+        }else{
+            this.disabled = true;
+            this.status = 1;//表示 详情/修改的状态
+        }
+
+        this.person = fetchDataByStuId(this.route.query.stuId);
+
+        console.log('person:',this.person)
+
         //构建表单中要显示的值
         let atribute = [];
 
@@ -136,6 +158,7 @@ export default {
     data() {
         return {
             disabled:true,
+            status:0,
             person: {
                 stuId:"1871232",//学号
                 name:'孙亮',//姓名
@@ -172,7 +195,7 @@ export default {
 
                 //发展对象的确定和考察阶段
                 devTime:'2020-12-01',//确定发展对象时间
-                devTrainTime:'2021-02-01&2021-03-02',//发展对象培训时间
+                devTrainTime:['2020-07-08','2020-08-01'],//发展对象培训时间
                 devTrainResult:'1',//发展对象培训班结业情况
                 classRank:'6',//业务课排名
                 extFileTime:'2021-04-12',//外调材料日期
@@ -219,14 +242,63 @@ export default {
     },
 
     methods: {
-        editData:function(){
+        getDateFromTableForm(){
+            return Object.assign({}, 
+                this.$refs.tableDetail.getDate(),
+                this.$refs.applyStage.getDate(),
+                this.$refs.actvStage.getDate(),
+                this.$refs.devStage.getDate(),
+                this.$refs.candidateStage.getDate(),
+                this.$refs.positiveStage.getDate()
+                )
+        },
+
+        editData(){
             this.disabled= !this.disabled;
         },
-        backToTable:function(){
-            // this.$router.push({path:'/home/table'});
-            
-        }
+        async saveEdit(){
+            let nData;
+            if(this.disabled){
+                this.$message.warn();('您当前处于未编辑状态，不能保存数据');
+                return;
+            }
 
+            try{
+                await  this.$confirm("确定要保存吗？", "提示", {
+                            type: "warning"
+                        });
+                
+                nData = this.getDateFromTableForm();
+                //将数据提交给后台
+
+                if(this.status===1){
+                    await cInfor(nData);
+                }else{
+                    if(isInDate(nData.stuId)){
+                        this.$message.error(`stuId为 ${this.person.stuId} 的同学的信息已经存在，添加失败`);
+                        return;
+                    }
+                    await addDate(nData);
+                }
+
+
+                this.$message.success(`保存id为 ${this.person.stuId} 的同学的信息成功`);
+                
+                this.router.push({path:'/home/table'});
+
+            }catch(e){
+                this.$message.error(`保存信息失败${e}`);
+               
+
+            }finally{
+                 console.log('the edit data:',nData);
+            }
+        },
+        backToTable(){
+            this.router.push({path:'/home/table'});
+            // this.$router.push({path:'/home/table'});
+        }
+       
     }
 };
 </script>
