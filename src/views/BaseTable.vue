@@ -253,27 +253,27 @@ export default {
                 gender:'',
                 national:'',//民族
                 branch:'',//支部
-                age:'',
+                age:'',//*年龄
                 proED:'',//学历
-                class:'',
+                tclass:'',//班级
                 tutor:'',//导师
                 stage:'',//所处阶段
 
                 // applyForm
-                isApplay:'',//是否提交申请书
+                isApplay:'',//*是否提交申请书
 
                 // activistForm
-                actvTime:'',
-                actvTrainTime:'',//积极分子培训班时间
+                actvTime:'',//*
+                actvTrainTime:'',//* 积极分子培训班时间
                 actvTrainResult:'',//培训班结业情况
 
                 // developForm
-                devTime:'',//确定发展对象时间
-                devTrainTime:'',//发展对象培训时间
+                devTime:'',//* 确定发展对象时间
+                devTrainTime:'',//* 发展对象培训时间
                 devTrainResult:'',//培训班结业情况
 
                 // candidateForm
-                candidateTime:'',//入党时间
+                candidateTime:'',//* 拟发展时间
                 // partyForm
                 partyTime:'',//转正时间
 
