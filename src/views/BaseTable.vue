@@ -78,16 +78,16 @@
                         id="el_table_314"
                     >
                         <el-table-column type="selection" width="55" align="center"></el-table-column>
+                        <el-table-column prop="stage" label="所处阶段" align="center"></el-table-column>
+                        <el-table-column prop="branch" label="支部" align="center"></el-table-column>
                         <el-table-column prop="stuId" label="学号"  align="center"></el-table-column>
                         <el-table-column prop="name" label="姓名" align="center"></el-table-column>
                         <el-table-column prop="gender" label="性别" align="center"></el-table-column>
                         <el-table-column prop="national" label="民族" align="center"></el-table-column>
                         <el-table-column prop="birthday" label="生日" align="center"></el-table-column>
-                        <el-table-column prop="branch" label="支部" align="center"></el-table-column>
                         <el-table-column prop="proED" label="学历" align="center"></el-table-column>
                         <el-table-column prop="grade" label="年级" align="center"></el-table-column>
-                        <el-table-column prop="class" label="班级" align="center"></el-table-column>
-                        <el-table-column prop="stage" label="所处阶段" align="center"></el-table-column>
+                        <el-table-column prop="tclass" label="班级" align="center"></el-table-column>
 
                         <el-table-column label="操作" width="180" align="center">
                             <template #default="scope">
@@ -181,6 +181,33 @@
 
 
 
+
+         <!-- 导出excel -->
+        <el-dialog title="导出Excel" v-model="exportVisible" width="30%" >
+            <div >
+                <div>
+                    <span>导出时，可按照当前搜索结果导出(如果未搜索会导出所有数据)，也可按照当前所选结果导出</span>
+                    <!-- <div style="margin-top:10px">
+                        导入的Excel时,籍贯一定要加/(如:河北省/秦皇岛市/山海关区),否则会导入错误。
+                    </div> -->
+                </div>
+                <div>
+                    <el-radio v-model="exExcle" label="1" border>导出当前搜索结果</el-radio>
+                    <el-radio v-model="exExcle" label="2" border>仅导出当前所选</el-radio>
+                </div>
+                
+            </div>
+            
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="cancleExport">取 消</el-button>
+                    <el-button type="primary" @click="exportExc">确 定</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+
+
     </div>
 </template>
 
@@ -191,7 +218,6 @@ import {formList,dateTranfer,listMap} from "../api/formDate.js"
 // 
 // import el_dialog from "../components/el_dialog.vue"
 import searchForm from "../components/searchForm.vue"
-import {useRouter, useRoute} from 'vue-router'
 
 
 export default {
@@ -202,18 +228,22 @@ export default {
     },
     activated(){
         this.getData();
+        //由于页面没有调用this.$nextTick，因此在重新得到数据后要设置一下selectedItem
+        for(let i=0;i<this.showDate.tableDateShow.length;i++){
+            if(this.selectedItem[this.showDate.tableDateShow[i].stuId]){
+                this.$refs.multipleTable.toggleRowSelection(this.showDate.tableDateShow[i],true);
+            }
+        }
+        this.selectedItemLock = false;
+        // console.log('activated')
     },
-     setup(){
-        const router = useRouter();
-        const route = useRoute();
-
-        return {router,route}
+    unmounted(){
+        console.log('destroy baseTable.vue');
     },
     data() {
         return {
 
             formList: '',
-
             activeName:'apply',
             //筛选/搜索数据时的条件
             query: {
@@ -260,6 +290,8 @@ export default {
             //文件导出
             listTitle:[],
             tableTitle:[],
+            exportVisible:false,
+            exExcle:'1',
 
             //文件导入
             fileTemp:'',
@@ -299,6 +331,7 @@ export default {
         };
     },
     created() {
+        console.log('createBaseTable')
         this.getData();
         this. formList = formList;
 
@@ -308,8 +341,8 @@ export default {
             this.tableTitle.push(listMap[item]);
         })
 
-        console.log('CreatlistTitle:',this.listTitle);
-        console.log('CreattableTitle:',this.tableTitle);
+        // console.log('CreatlistTitle:',this.listTitle);
+        // console.log('CreattableTitle:',this.tableTitle);
 
     },
     // computed:{
@@ -366,7 +399,26 @@ export default {
 
         },
         
+        // 多选操作
+        handleSelectionChange(val) {
+            //this.selectedItemLock起到加锁的作用，防止在更改表格数据时触发该函数，误更改this.selectedItem
+            if(this.selectedItemLock) return;
 
+            let idObj = {};
+            console.log('val:',val);
+            val.forEach(item=>{
+                idObj[item.stuId]=true;
+            })
+            this.showDate.tableDateShow.forEach(item=>{
+                if(idObj[item.stuId]){
+                    this.selectedItem[item.stuId] = true;
+                } else if(this.selectedItem[item.stuId]){
+                    console.log('delete')
+                    delete this.selectedItem[item.stuId];
+                }
+            })
+
+        },
 
         // 删除操作
         async handleDelete(index,val) {
@@ -392,26 +444,7 @@ export default {
             }
 
         },
-        // 多选操作
-        handleSelectionChange(val) {
-            //this.selectedItemLock起到加锁的作用，防止在更改表格数据时触发该函数，误更改this.selectedItem
-            if(this.selectedItemLock) return;
-
-            let idObj = {};
-            console.log('val:',val);
-            val.forEach(item=>{
-                idObj[item.stuId]=true;
-            })
-            this.showDate.tableDateShow.forEach(item=>{
-                if(idObj[item.stuId]){
-                    this.selectedItem[item.stuId] = true;
-                } else if(this.selectedItem[item.stuId]){
-                    console.log('delete')
-                    delete this.selectedItem[item.stuId];
-                }
-            })
-
-        },
+        
         async delAllSelection() {
 
             let str = "", deleteIds = Object.keys(this.selectedItem);
@@ -448,7 +481,7 @@ export default {
         // 编辑用户信息
         // 编辑操作
         handleEdit(index, row) {
-            this.router.push({path:'/home/form',query:{stuId:row.stuId}})
+            this.$router.push({path:'/home/form',query:{stuId:row.stuId}});
 
             // for(let key in this.form){
             //     this.form[key]="";
@@ -476,7 +509,7 @@ export default {
                 await  this.$confirm("确定要新增用户吗？", "提示", {
                             type: "warning"
                         });
-                this.router.push({path:'/home/form',query:{isDisabled:false}});
+                this.$router.push({path:'/home/form',query:{isDisabled:false}})
                 
             }catch(e){
                 console.log(e);
@@ -497,6 +530,9 @@ export default {
 
         // 重置this.query，查询所有的数据
         resetQueryData(){
+            this.selectedItem = {},
+            this.selectedItemLock = false;
+
             let keys = Object.keys(this.query);
             let pageIndex = this.query.pageIndex;
             for(let i=0;i<keys.length;i++){
@@ -512,6 +548,9 @@ export default {
         },
         // 按照this.query的筛选条件要求，查询数据
         requeryData(){
+            this.selectedItem = {},
+            this.selectedItemLock = false;
+
             this.query = this.rnQuery();
 
             // console.log("query",this.query);
@@ -531,10 +570,39 @@ export default {
         //excel导入导出操作
         //下载excel
         getExcel(){
-            let that = this;
-            let obj = {type:0,  listTitle: that.listTitle,  tableTitle: that.tableTitle}
-            downDate(obj);
+            this.exportVisible = true;
+            // let that = this;
+            // let obj = {type:1,  listTitle: that.listTitle,  tableTitle: that.tableTitle}
+            // downDate(obj,this.query);
         },
+        cancleExport(){
+            this.exportVisible = false;
+        },
+        exportExc(){
+            if(this.exExcle==2){
+                let exportIds = this.selectedItem;
+                 //数据都已经删除，更新this.selectedItem为空，将this.selectedItemLock置为false
+                this.selectedItem = {},
+                this.selectedItemLock = false;
+
+                //重新获取数据
+                // this.getData(this.query);
+                let that = this;
+                let obj = {type:2,  listTitle: that.listTitle,  tableTitle: that.tableTitle}
+                downDate(obj,this.query,exportIds);
+
+                // this.$message.success(``)
+            } else{
+                let that = this;
+                let obj = {type:1,  listTitle: that.listTitle,  tableTitle: that.tableTitle}
+                downDate(obj,this.query);
+            }
+            this.exportVisible = false;
+        },
+
+
+
+
 
         //导入excel
         handleExcelChange(_,fileList){
@@ -565,8 +633,8 @@ export default {
 
                 
 
-                let tableArray = loadDateFromExcel(filesObj);
-                console.log('tableArray:',tableArray)
+                let tableArray = await loadDateFromExcel(filesObj);
+                // console.log('tableArray:',tableArray)
                 
 
                  

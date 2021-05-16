@@ -7,8 +7,8 @@
                 :class="{'active': isActive(item.path)}"
                 :key="index"
             >
-                <router-link :to="item.path" class="tags-li-title">{{item.title}}</router-link>
-                <span class="tags-li-icon" @click="closeTags(index)">
+                <router-link :to="item.path" class="tags-li-title">{{item.name=='basetable'?item.title:item.title+item.path.split('=')[1]}}</router-link>
+                <span class="tags-li-icon" @click="closeTags(index)" v-if="item.name!=='basetable'">
                     <i class="el-icon-close"></i>
                 </span>
             </li>
@@ -34,7 +34,7 @@
 export default {
     computed: {
         tagsList() {
-            return this.$store.state.tagsList;
+            return JSON.parse(JSON.stringify(this.$store.state.tagsList));
         },
         showTags() {
             return this.tagsList.length > 0;
@@ -47,6 +47,7 @@ export default {
         // 关闭单个标签
         closeTags(index) {
             const delItem = this.tagsList[index];
+            // if(delItem.name==='basetable') return;
             this.$store.commit("delTagsItem", { index });
             const item = this.tagsList[index]
                 ? this.tagsList[index]
@@ -73,6 +74,7 @@ export default {
         // 设置标签
         setTags(route) {
             const isExist = this.tagsList.some(item => {
+                
                 return item.path === route.fullPath;
             });
             if (!isExist) {
@@ -92,6 +94,8 @@ export default {
     },
     watch: {
         $route(newValue) {
+            console.log('router newValue:',newValue);
+            console.log('tagsList:',this.tagsList)
             this.setTags(newValue);
         }
     },

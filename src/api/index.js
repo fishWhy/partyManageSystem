@@ -1,10 +1,9 @@
-// import request from '../utils/request';
-// import { reject } from "core-js/fn/promise";
+import request from '../utils/request';
 import { downLoadExcel,importfxx} from "../utils/excel/upDownExcel.js";
 import {ptdToAddress,dateTranfer,addressToPtd,dateBack} from './formDate.js';
 
 
-// export const fetchData = query => {
+// export const requestData = query => {
 //     return request({
 //         url: './table.json',
 //         method: 'get',
@@ -12,9 +11,39 @@ import {ptdToAddress,dateTranfer,addressToPtd,dateBack} from './formDate.js';
 //     });
 // };
 
+/**
+ * 
+ * @param {请求时的路径} urlL 
+ * @param {请求时的参数} query 
+ * @param {请求方式，有get,push,post,delete} rqType 
+ * @returns 
+ */
+const requestData = (urlL,query, rqType = 'post') => {
+    // console.log(urlL,rqType,query)
+    return request({
+        url: urlL,
+        method: rqType,
+        data: JSON.parse(JSON.stringify(query))
+    });
+};
+
+
+
+
+
 //返回处理数据的函数数组，数据以闭包的型式保存。
 let dataFun = (function(){
    
+    function getStartDataFromBackend(obj){
+        let param = {};
+        param.userName = obj.userName;
+        param.password = obj.password;
+        return requestData('/login',param,'post').then((item)=>{
+            console.log('item:',item);
+            localStorage.setItem("token", item.data.token);
+            localStorage.setItem("stuId", item.data.user.stu_id);
+        });
+    }
 
      //数组去重
     function arrUni(arr){
@@ -39,12 +68,16 @@ let dataFun = (function(){
     //增
     // 将传入的数组dataItem添加到数据的结尾,在添加的过程中去重并跟新原先的值
     function addDate(dataArr){
-        return new Promise(function(resolve){
+        return new Promise(function(resolve,reject){
             dataArr = arrUni(dataArr);
-            data.list = data.list.concat(dataArr);
-            data.list = arrUni(data.list);
-            // console.log('data_list:',data.list);
-            resolve('202');
+            requestData('/addInfoAll',dataArr,'post').then(()=>{
+                data.list = data.list.concat(dataArr);
+                data.list = arrUni(data.list);
+                // console.log('data_list:',data.list);
+                resolve('202');
+            },item=>{
+                reject(item);
+            });           
         })
     }
      
@@ -61,14 +94,20 @@ let dataFun = (function(){
                 stuIdObj[stuIdArr[j]] = true;
             }
 
-            for(let i=data.list.length-1;i>=0;i--){
-                if(stuIdObj[data.list[i].stuId]){
-                    data.list.splice(i,1);
-                    // len--;
-                } 
-            }
+            requestData('/deleteInfos',stuIdArr,'post').then(()=>{
+                for(let i=data.list.length-1;i>=0;i--){
+                    if(stuIdObj[data.list[i].stuId]){
+                        data.list.splice(i,1);
+                        // len--;
+                    } 
+                }
+    
+                resolve('成功删除')
+            },item=>{
+                reject(item);
+            });
 
-            resolve('成功删除')
+            
 
             //未查找到对应的数据，无法删除
             // reject(stuId);
@@ -81,16 +120,22 @@ let dataFun = (function(){
     function cInfor(infor){
         // console.log('infor:',infor)
         return new Promise(function(resolve,reject){
-            for(let i=data.list.length-1;i>=0;i--){
-                if(data.list[i].stuId===infor.stuId){
-                    data.list[i] = infor;
-                    // console.log('that is all right')
-                    resolve(infor.stuId)
-                    return;
+            requestData('/updateInfo',infor,'post').then(()=>{
+                for(let i=data.list.length-1;i>=0;i--){
+                    if(data.list[i].stuId===infor.stuId){
+                        data.list[i] = infor;
+                        // console.log('that is all right')
+                        resolve(infor.stuId)
+                        return;
+                    }
                 }
-            }
-            //未查找到对应的数据，无法修改
-            reject(infor.stuId);
+                 //未查找到对应的数据，无法修改
+                reject(infor.stuId);
+            },item=>{
+                reject(item)
+            });
+            
+           
         }) 
     }
 
@@ -101,16 +146,13 @@ let dataFun = (function(){
             
             // console.log(query);
            
-            // console.log('the final query:',query);
-            // let _data={list:[],listTitle:[],tableTitle:[]},isSelected;
-            // _data.listTitle = data.listTitle;
-            // _data.tableTitle = data.tableTitle;
             
             let query = JSON.parse(JSON.stringify(q));
             // console.log('query:',query)
 
 
             let _data= [], isSelected;
+            // console.log('dataList:',data.list)
 
 
             data.list.forEach((item)=>{
@@ -227,10 +269,21 @@ let dataFun = (function(){
 
 
     // 将data.list的值更新为 tableDate
-    function setNewData (tableData){
-         return new Promise(function(resolve){
-            data.list = arrUni(tableData);
-            resolve('202');
+    async function  setNewData (tableData){
+         return new Promise(function(resolve,reject){
+            let arr = JSON.parse(JSON.stringify(tableData));
+            // console.log("arr:",arr)
+            
+            
+            requestData('/updateAll',arr,'post').then(()=>{
+                data.list = arrUni(arr);
+                console.log("arr:",arr);
+                resolve('202');
+
+            },(item)=>{
+                reject(item);
+            });
+
          })
     }
 
@@ -250,8 +303,76 @@ let dataFun = (function(){
         return {listTitle:data.listTitle,tableTitle:data.tableTitle};
     }
 
+
+    //查
+    //以query为条件查找数据, attriShow表明了返回的数据只包含哪些属性
+    function fetchDataToDown(q,attriShow=null){
+        return new Promise(function(resolve){
+            
+            // console.log(query);
+            console.log(attriShow);
+           
+            // if(!q)
+            let query = JSON.parse(JSON.stringify(q));
+            // console.log('query:',query)
+
+
+            let _data= [], isSelected;
+            // console.log('dataList:',data.list)
+
+
+            data.list.forEach((item)=>{
+                isSelected = true;
+                for(let key in query){
+                    // if(query[key]){
+                    //     console.log('the query key:',key)
+                    // }
+                    if(query[key]&&Object.prototype.hasOwnProperty.call(item,key)&&(query[key]!==item[key])){
+                        // console.log('key:',key,'  the value:',query[key], '  the item valu:',item[key]);
+                        // 对于stuId，只要item[key]是以query[key]开头的就行
+                        if((key==='stuId')&&(String(item[key]).indexOf(query[key])===0)){
+                            continue;
+                        }
+                        if(key==='actvTrainTime'||key==='devTrainTime'){
+                            let val1 = item[key], val2 = query[key];
+                            if((Number(val2[0])<=val1[0]) && (Number(val2[1])>=val1[1])){
+                                // console.log('trainTimeArea');
+                                continue;
+                            }
+                        }
+                        let t = /Time$/g;
+                        // console.log('长度',query[key].length===2,query[key] instanceof Array,'正则：' ,t.test(key),query[key] instanceof Array && t.test(key))
+                        if((query[key] instanceof Array) && t.test(key)){
+                            // console.log('TimeArea');
+
+                            let val = item[key], area = query[key];
+                            if((area[0]<=Number(val)) && (Number(val)<=area[1])){
+                                // console.log('In the TimeArea');
+                                continue;
+                            }
+                        }
+                        isSelected = false;break;
+                    }
+                }
+
+                if(isSelected){
+                    //为了将数据隔离开，这里进行了深拷贝，由于item结构比较简单，这里的深拷贝方法也比较简易
+                    _data.push(JSON.parse(JSON.stringify(item)));
+                }
+            })
+            console.log('_data',_data)
+            let _rDate = {};
+            _rDate.list = _data;
+            _rDate.itemTotal = _data.length;
+
+
+            resolve(_rDate);
+        })
+        
+    }
+
     //下载数据到excel表格
-    function downDate(filterObj){
+    function downDate(filterObj,query,exportIds){
         if(filterObj.type===0){
             // 下载模板
             let arr = JSON.parse(JSON.stringify([downLoadTemp]));
@@ -260,9 +381,29 @@ let dataFun = (function(){
             downLoadExcel(downDate, filterObj.listTitle, filterObj.tableTitle,'支部成员信息'); 
         } else if(filterObj.type===1){
             //下载所有数据
-            let arr = JSON.parse(JSON.stringify(data.list));
-            let downDate = downDateStyle(arr);
-            downLoadExcel(downDate, filterObj.listTitle, filterObj.tableTitle,'支部成员信息'); 
+            fetchDataToDown(query).then((_data)=>{
+                //一定要在下载时，将数据深复制一次，将data.list与后面的操作隔离开来
+                let arr = JSON.parse(JSON.stringify(_data.list));
+                let downDate = downDateStyle(arr);
+                downLoadExcel(downDate, filterObj.listTitle, filterObj.tableTitle,'支部成员信息'); 
+        
+            })
+        } else if(filterObj.type===2){
+            //下载所有数据
+            fetchDataToDown(query).then((_data)=>{
+                //一定要在下载时，将数据深复制一次，将data.list与后面的操作隔离开来
+                let arr = JSON.parse(JSON.stringify(_data.list)), idsFilter = JSON.parse(JSON.stringify(exportIds));
+                let downArr = [];
+                arr.forEach(item=>{
+                    if(idsFilter[item.stuId]){
+                        downArr.push(item);
+                    }
+                });
+                
+                let downDate = downDateStyle(downArr);
+                downLoadExcel(downDate, filterObj.listTitle, filterObj.tableTitle,'支部成员信息'); 
+        
+            })
         }
     }
     function downDateStyle(list){
@@ -279,17 +420,19 @@ let dataFun = (function(){
         let fileList = filesObj.fileList;
         let tableArray = [];
         let _data = [];
-        console.log('filesObj:',filesObj);
+        // console.log('filesObj:',filesObj);
 
         for(let i=0;i<fileList.length;i++){
             try{
                 _data = await importfxx(fileList[i].raw, filesObj.listTitle,filesObj.tableTitle);
                 
-                console.log("beforeStyle:",_data)
+                // console.log("beforeStyle:",_data)
                 _data = loadDateStyle(_data);
-                console.log("afterStyle:",_data);
+                // console.log("afterStyle:",_data);
                 tableArray = tableArray.concat(_data);
                 tableArray = arrUni(tableArray);
+                console.log('tableArray:',tableArray);
+
                 
             } catch(e){
                 console.log('erro:',e)
@@ -303,7 +446,7 @@ let dataFun = (function(){
     function loadDateStyle(list){
         list = arrUni(list);
 
-        let item;
+        let item,arr;
         //把list中的每一项转换成字符串
         for(let i=0;i<list.length;i++){
             item = list[i];
@@ -312,8 +455,10 @@ let dataFun = (function(){
                 //》》》》这里其实涉及到一个问题，我们通过importfxx从表格获取的数据不一定都是字符串类型的数据，
                     item[k] = item[k]+'';
                     if(k==="actvTrainTime"||k==='devTrainTime'){
-                        // arr = [];
-                        item[k] = item[k].split(',');
+                        
+                        arr = item[k].split(',');
+                        item[k] = arr;
+
                     }
                 }
             }
@@ -325,21 +470,7 @@ let dataFun = (function(){
 
      // 关于每条数据中每个属性值0,1,2..代表什么可见：../api/formDate.js
      var data = {
-         perPageNum: 5,
-         listTitle:['stuId','name','gender','national','birthday','branch','proED','class','stage'],
-         tableTitle:['学号','姓名','性别','民族','生日','支部','学历','班级','所处阶段'],
-         
-        //  list:[
-        //     {stuId:"1671172",name:'赵亮',gender:'1',national:'1',birthday:"1997-06-07",branch:'1',proED:'1',grade:'1',class:'1',stage:'3'},
-        //     {stuId:"1671173",name:'钱亮',gender:'2',national:'2',birthday:"1997-06-07",branch:'2',proED:'2',grade:'1',class:'2',stage:'1'},
-        //     {stuId:"1771172",name:'孙亮',gender:'1',national:'1',birthday:"1997-06-07",branch:'3',proED:'1',grade:'1',class:'3',stage:'2'},
-        //     {stuId:"1771173",name:'李亮',gender:'1',national:'3',birthday:"1997-06-07",branch:'2',proED:'2',grade:'1',class:'2',stage:'2'},
-        //     {stuId:"1871173",name:'周亮',gender:'1',national:'2',birthday:"1997-06-07",branch:'2',proED:'3',grade:'1',class:'2',stage:'3'},
-        //     {stuId:"1871172",name:'吴亮',gender:'2',national:'1',birthday:"1997-06-07",branch:'1',proED:'2',grade:'1',class:'1',stage:'1'},
-        //     {stuId:"1971172",name:'郑亮',gender:'2',national:'3',birthday:"1997-06-07",branch:'3',proED:'1',grade:'1',class:'3',stage:'2'},
-        //     {stuId:"1971173",name:'王亮',gender:'1',national:'2',birthday:"1997-06-07",branch:'1',proED:'1',grade:'1',class:'2',stage:'1'},
-           
-        // ],
+         perPageNum: 20,
 
         list:[
             {
@@ -351,13 +482,13 @@ let dataFun = (function(){
                 home:["130000","130300","130303"],//籍贯,使用了element-china-area-data
                 idCard:'13141414',//身份证
                 birthday:'19950102',//出生日期
-                grade:'1',//年级
-                class:'1',//班级
+                grade:'18级',//年级
+                tclass:'1903班',//班级
                 proED:'1',//学历
                 tutor:'张李',//导师
                 stage:'1',//所处阶段
                 bedroom:'3舍A231',//寝室
-                duty:'班长',//职务
+                duty:'1',//职务
                 branch:'1',//所在支部
                 imgUrl:'',//照片
                 
@@ -415,14 +546,14 @@ let dataFun = (function(){
                 national:'2',//民族
                 home:["130000","130300","130303"],//籍贯,使用了element-china-area-data
                 idCard:'13141414',//身份证
-                birthday:'199501012',//出生日期
-                grade:'1',//年级
-                class:'1',//班级
+                birthday:'19950112',//出生日期
+                grade:'19级',//年级
+                tclass:'1901班',//班级
                 proED:'1',//学历
                 tutor:'张李',//导师
                 stage:'1',//所处阶段
                 bedroom:'3舍A231',//寝室
-                duty:'班长',//职务
+                duty:'2',//职务
                 branch:'1',//所在支部
                 imgUrl:'',//照片
                 
@@ -481,13 +612,13 @@ let dataFun = (function(){
                 home:["130000","130300","130303"],//籍贯,使用了element-china-area-data
                 idCard:'13141414',//身份证
                 birthday:'19950102',//出生日期
-                grade:'1',//年级
-                class:'1',//班级
+                grade:'20级',//年级
+                tclass:'2011班',//班级
                 proED:'1',//学历
                 tutor:'张李',//导师
                 stage:'1',//所处阶段
                 bedroom:'3舍A231',//寝室
-                duty:'班长',//职务
+                duty:'3',//职务
                 branch:'1',//所在支部
                 imgUrl:'',//照片
                 
@@ -546,13 +677,13 @@ let dataFun = (function(){
                 home:["130000","130300","130303"],//籍贯,使用了element-china-area-data
                 idCard:'13141414',//身份证
                 birthday:'19950102',//出生日期
-                grade:'1',//年级
-                class:'1',//班级
+                grade:'18级',//年级
+                tclass:'1801班',//班级
                 proED:'1',//学历
                 tutor:'张李',//导师
                 stage:'1',//所处阶段
                 bedroom:'3舍A231',//寝室
-                duty:'班长',//职务
+                duty:'4',//职务
                 branch:'1',//所在支部
                 imgUrl:'',//照片
                 
@@ -610,13 +741,13 @@ let dataFun = (function(){
                 home:["130000","130300","130303"],//籍贯,使用了element-china-area-data
                 idCard:'13141414',//身份证
                 birthday:'19950102',//出生日期
-                grade:'1',//年级
-                class:'1',//班级
+                grade:'20级',//年级
+                tclass:'2001班',//班级
                 proED:'1',//学历
                 tutor:'张李',//导师
                 stage:'1',//所处阶段
                 bedroom:'3舍A231',//寝室
-                duty:'班长',//职务
+                duty:'5',//职务
                 branch:'1',//所在支部
                 imgUrl:'',//照片
                 
@@ -675,13 +806,13 @@ let dataFun = (function(){
                 home:["130000","130300","130303"],//籍贯,使用了element-china-area-data
                 idCard:'13141414',//身份证
                 birthday:'19950102',//出生日期
-                grade:'1',//年级
-                class:'1',//班级
+                grade:'19级',//年级
+                tclass:'1902班',//班级
                 proED:'1',//学历
                 tutor:'张李',//导师
                 stage:'1',//所处阶段
                 bedroom:'3舍A231',//寝室
-                duty:'班长',//职务
+                duty:'6',//职务
                 branch:'1',//所在支部
                 imgUrl:'',//照片
                 
@@ -740,13 +871,13 @@ let dataFun = (function(){
                 home:["130000","130300","130303"],//籍贯,使用了element-china-area-data
                 idCard:'13141414',//身份证
                 birthday:'19950102',//出生日期
-                grade:'1',//年级
-                class:'1',//班级
+                grade:'19级',//年级
+                tclass:'1902班',//班级
                 proED:'1',//学历
                 tutor:'张李',//导师
                 stage:'1',//所处阶段
                 bedroom:'3舍A231',//寝室
-                duty:'班长',//职务
+                duty:'2',//职务
                 branch:'1',//所在支部
                 imgUrl:'',//照片
                 
@@ -803,7 +934,7 @@ let dataFun = (function(){
     //     return data.length;
     // }
 
-    return [addDate,deltDate,cInfor,fetchData,setNewData,isInDate,getTitle,downDate,fetchDataByStuId,loadDateFromExcel];
+    return [addDate,deltDate,cInfor,fetchData,setNewData,isInDate,getTitle,downDate,fetchDataByStuId,loadDateFromExcel,getStartDataFromBackend];
 
 
 
@@ -813,10 +944,10 @@ let dataFun = (function(){
 
 })();
 
-let [addDate,deltDate,cInfor,fetchData,setNewData,isInDate,getTitle,downDate,fetchDataByStuId,loadDateFromExcel] = [...dataFun];
+let [addDate,deltDate,cInfor,fetchData,setNewData,isInDate,getTitle,downDate,fetchDataByStuId,loadDateFromExcel,getStartDataFromBackend] = [...dataFun];
 
 
-export {addDate,deltDate,cInfor,fetchData,setNewData,isInDate,getTitle,downDate,fetchDataByStuId,loadDateFromExcel}
+export {addDate,deltDate,cInfor,fetchData,setNewData,isInDate,getTitle,downDate,fetchDataByStuId,loadDateFromExcel,requestData,getStartDataFromBackend}
 
 
 
@@ -830,13 +961,13 @@ var downLoadTemp = {
     home:["130000","130300","130303"],//籍贯,使用了element-china-area-data
     idCard:'13141414',//身份证
     birthday:'19950102',//出生日期
-    grade:'1',//年级
-    class:'1',//班级
+    grade:'20级',//年级
+    tclass:'2001班',//班级
     proED:'1',//学历
     tutor:'张李',//导师
     stage:'1',//所处阶段
     bedroom:'3舍A231',//寝室
-    duty:'班长',//职务
+    duty:'1',//职务
     branch:'1',//所在支部
     imgUrl:'',//照片
     

@@ -3,7 +3,8 @@ import {createStore} from 'vuex'
 export default createStore({
     state: {
         tagsList: [],
-        collapse: false
+        collapse: false,
+        baseTable:{}
     },
     mutations: {
         delTagsItem(state, data) {
@@ -14,7 +15,9 @@ export default createStore({
         setTagsItem(state, data) {
             state
                 .tagsList
-                .push(data)
+                .push(data);
+            console.log('state tageList length:',state.tagsList.length);
+            console.log('state.tagesList:',state.tagsList);
         },
         clearTags(state) {
             state.tagsList = []

@@ -1,10 +1,10 @@
 <template>
     <div class="login-wrap">
         <div class="ms-login">
-            <div class="ms-title">后台管理系统</div>
+            <div class="ms-title">党员信息管理系统</div>
             <el-form :model="param" :rules="rules" ref="login" label-width="0px" class="ms-content">
-                <el-form-item prop="username">
-                    <el-input v-model="param.username" placeholder="username">
+                <el-form-item prop="userName">
+                    <el-input v-model="param.userName" placeholder="userName">
                         <template #prepend>
                             <el-button icon="el-icon-user"></el-button>
                         </template>
@@ -34,15 +34,16 @@
 </template>
 
 <script>
+// import {getStartDataFromBackend} from '../api/index.js'
 export default {
     data() {
         return {
             param: {
-                username: "admin",
-                password: "123123"
+                userName: "00008612",
+                password: "123456"
             },
             rules: {
-                username: [
+                userName: [
                     { required: true, message: "请输入用户名", trigger: "blur" }
                 ],
                 password: [
@@ -58,9 +59,23 @@ export default {
         submitForm() {
             this.$refs.login.validate(valid => {
                 if (valid) {
-                    this.$message.success("登录成功");
-                    localStorage.setItem("ms_username", this.param.username);
-                    this.$router.push("/home/dashboard");
+                    // requestData('/login',this.param,'post').then((item)=>{
+                    //     console.log('item:',item);
+                    //     localStorage.setItem("token", item.data.token);
+                    //     localStorage.setItem("stuId", item.data.user.stu_id);
+                    // });
+
+                    // getStartDataFromBackend(this.param).then(()=>{
+                    //     this.$router.push("/home/table");
+                    //     this.$message.success("登录成功");
+                    // },(item)=>{
+                    //     console.log('login err:',item);
+                    //     this.$message.error("登录失败");
+                    // });
+
+                    this.$router.push("/home/table");
+
+                    
                 } else {
                     this.$message.error("请输入账号和密码");
                     return false;

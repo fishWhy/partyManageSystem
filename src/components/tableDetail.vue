@@ -131,7 +131,8 @@ export default{
         // this.formObj.forEach(item=>{
         //     this.query[item.prop] = "";
         // })
-        this.dateItems = this.content;
+        this.dateItems = JSON.parse(JSON.stringify(this.content));
+        // console.log('dateItems',this.dateItems);
     },
 
     data(){
@@ -231,23 +232,36 @@ export default{
             YMDArea.forEach(item=>{
                 let val = this.dateItems[item];
                 if(val instanceof Array){
+                    // console.log('YMDAreaval:',val,val[0],[val[1]])
                     rnDate[item] = [];
                     let val1,val2,y,m,d;
+
                     val1 = val[0];
-                    y = val1.getFullYear();
-                    m=val1.getMonth()+1;
-                    d=val1.getDate();
-                    if(m<=9)m = "0" + m;
-                    if(d<=9)d="0"+d;
-                    rnDate[item][0] = y + m + d;
+                    if(val1 instanceof Date){
+                        y = val1.getFullYear();
+                        m=val1.getMonth()+1;
+                        d=val1.getDate();
+                        if(m<=9)m = "0" + m;
+                        if(d<=9)d="0"+d;
+                        rnDate[item][0] = y + m + d;
+                    }else {
+                        rnDate[item][0] = val1;
+                    }
+                    
 
                     val2 = val[1];
-                    y = val2.getFullYear();
-                    m=val2.getMonth()+1;
-                    d=val2.getDate();
-                    if(m<=9)m = "0" + m;
-                    if(d<=9)d="0"+d;
-                    rnDate[item][1] = y + m + d;
+                     if(val instanceof Date){
+                        y = val2.getFullYear();
+                        m=val2.getMonth()+1;
+                        d=val2.getDate();
+                        if(m<=9)m = "0" + m;
+                        if(d<=9)d="0"+d;
+                        rnDate[item][1] = y + m + d;
+                    }else {
+                        rnDate[item][0] = val2;
+                    }
+
+                    
                 }
             });
 
@@ -257,6 +271,30 @@ export default{
             let rn = JSON.parse(JSON.stringify(rnDate));
             // console.log('tableDetail:',rn);
             return rn;
+        },
+        //获取属性为attr的关于年月日的数据
+        getYMRDate(attr){
+            // console.log('attr',attr);
+            let rnDate = null;
+            this.formObj.forEach(item=>{
+                if(item.type === 'YMR' && item.prop == attr){
+                    let time= this.dateItems[item.prop];
+                    // console.log('item:',item,time);
+                    if(time instanceof Date){
+                        // console.log('date')
+                        rnDate = new Date(time);
+                    }else if(typeof time ==='string' && time.length>0){
+                        let y = time.substring(0,4), m = time.substring(4,6), d = time.substring(6,8);
+                        // console.log('y m r:', y, m, d);
+                        rnDate = new Date(y+'-'+m+'-'+d);
+                    }
+
+                }
+            });
+            // console.log('no match')
+            return  rnDate;
+            // return {y:val.getFullYear,m:val.getMonth()+1,D:val.getDate()};
+            
         }
     }
 }

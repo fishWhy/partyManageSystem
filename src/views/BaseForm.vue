@@ -71,25 +71,25 @@ import  tableDetail from "../components/tableDetail.vue"
 
 
 import {tableForm} from "../api/formDate.js"
-import {useRouter, useRoute} from 'vue-router'
 // dateTranfer
 
 import {fetchDataByStuId,cInfor, addDate,isInDate} from "../api/index";
 // addDate,cInfor,fetchData,
 
 export default {
+    name: "baseform",
     components:{
         TableDetail:tableDetail
     },
-    setup(){
-        const router = useRouter();
-        const route = useRoute();
-
-        return {router,route}
+    actvStage(){
+        console.log('actvStage')
+    },
+    unmounted(){
+        console.log('destroyed baseForm.vue')
     },
     created(){
-        console.log('stuId',this.route.query.stuId,this.route.query.isDisabled);
-        if(this.route.query.isDisabled==="false"){
+        console.log('here createBaseForm');
+        if(this.$route.query.isDisabled==="false"){
             this.disabled = false;
             this.status = 2;//表示 添加用户的状态
         }else{
@@ -97,9 +97,9 @@ export default {
             this.status = 1;//表示 详情/修改的状态
         }
 
-        this.person = fetchDataByStuId(this.route.query.stuId);
+        this.person = fetchDataByStuId(this.$route.query.stuId);
 
-        console.log('person:',this.person)
+        console.log('here get person:',this.person)
 
         //构建表单中要显示的值
         let atribute = [];
@@ -256,15 +256,40 @@ export default {
         editData(){
             this.disabled= !this.disabled;
         },
+        
         async saveEdit(){
             let nData;
             if(this.disabled){
-                this.$message.warn();('您当前处于未编辑状态，不能保存数据');
+                this.$message({
+                            type:'warning',
+                            message: "您当前处于未编辑状态，不能保存数据"
+                    });
                 return;
             }
 
+            //判断，申请入党时间 与 确定积极分子时间 相差6个月以上， 入党时间是否与 确定积极分子时间 相差6个月
+            let applyTime = this.$refs.applyStage.getYMRDate('applyTime'); 
+            let actvTime = this.$refs.actvStage.getYMRDate("actvTime");
+            let jnTime = this.$refs.candidateStage.getYMRDate("jnTime");
+            console.log('applyTime:',applyTime);
+            console.log('actvTime:',actvTime);
+            console.log('jinTime:',jnTime);
+            let str = "";
+            if(!this.isDateBigM(applyTime,actvTime,6)){
+                str = '申请入党时间与确定积极分子时间必须相差6个月以上;'
+                // this.$message({type:'error',message:'申请入党时间与确定积极分子时间必须相差6个月以上，请改正'});
+                // return;
+            }
+            if(!this.isDateBigM(actvTime,jnTime,12)){
+                str +='确定积极分子时间与入党时间必须相差1年以上';
+                // this.$message({type:'error',message:'确定积极分子时间与入党时间必须相差1年以上，请改正'});
+                return;
+            }
+
+
+
             try{
-                await  this.$confirm("确定要保存吗？", "提示", {
+                await  this.$confirm(`确定要保存吗？${str}`, "提示", {
                             type: "warning"
                         });
                 
@@ -278,15 +303,16 @@ export default {
                         this.$message.error(`stuId为 ${this.person.stuId} 的同学的信息已经存在，添加失败`);
                         return;
                     }
-                    await addDate(nData);
+                    await addDate([nData]);
                 }
 
 
                 this.$message.success(`保存id为 ${this.person.stuId} 的同学的信息成功`);
                 
-                this.router.push({path:'/home/table'});
+                this.$router.push({path:'/home/table'});
 
             }catch(e){
+                console.log(e);
                 this.$message.error(`保存信息失败${e}`);
                
 
@@ -295,10 +321,31 @@ export default {
             }
         },
         backToTable(){
-            this.router.push({path:'/home/table'});
-            // this.$router.push({path:'/home/table'});
+            this.$router.push({path:'/home/table'});
+        },
+
+        isDateBigM(time1,time2, m){
+            if(!time1||!time2|| !(time1 instanceof Date)||!(time1 instanceof Date)) return false;
+            
+            var diffyear = time2.getFullYear() - time1.getFullYear() ;
+            var diffmonth = diffyear * 12 + time2.getMonth() - time1.getMonth() ;
+            var diffDay = time2.getDate() - time1.getDate() ;
+            // if(diffmonth < 0 ){
+            //     return false ;
+            // }else if(diffmonth < m || (diffmonth == m && diffDay <= 0)){
+            //     return false;
+            // }
+            console.log('differTime:', diffmonth,diffDay);
+            if(diffmonth>m || diffmonth==m && diffDay>0){
+                console.log('1')
+                return true;
+            }else {
+                console.log('2')
+                return false;
+            }
+            // return true;
         }
-       
+
     }
 };
 </script>

@@ -48,8 +48,8 @@ function importfxx(obj,listTitle,tableTitle) {
                         if(_objKeys.length===tableTitle.length){
                             tableTitle.forEach(item=>{
                                 if(_objKeys.indexOf(item)===-1){
-                                    console.log('the item is',item);
-                                //    reject(`1.文件《${data[i].name}》内容格式错误，${item},请删除后重新上传！`);
+                                    // console.log('the item is',item);
+                                   reject(`1.文件《${data[i].name}》内容格式错误，${item},请删除后重新上传！`);
                                     return;
                                 }
                             })
