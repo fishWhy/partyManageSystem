@@ -34,7 +34,7 @@
 </template>
 
 <script>
-// import {getStartDataFromBackend} from '../api/index.js'
+import {getStartDataFromBackend} from '../api/index.js'
 export default {
     data() {
         return {
@@ -65,15 +65,15 @@ export default {
                     //     localStorage.setItem("stuId", item.data.user.stu_id);
                     // });
 
-                    // getStartDataFromBackend(this.param).then(()=>{
-                    //     this.$router.push("/home/table");
-                    //     this.$message.success("登录成功");
-                    // },(item)=>{
-                    //     console.log('login err:',item);
-                    //     this.$message.error("登录失败");
-                    // });
+                    getStartDataFromBackend(this.param).then(()=>{
+                        this.$router.push("/home/table");
+                        this.$message.success("登录成功");
+                    },(item)=>{
+                        console.log('login err:',item);
+                        this.$message.error("登录失败");
+                    });
 
-                    this.$router.push("/home/table");
+                    // this.$router.push("/home/table");
 
                     
                 } else {

@@ -38,6 +38,17 @@ export default {
             return this.$store.state.collapse;
         },
         keyOfRouter(){
+            // const isExist =this.$store.state.tagsList.some(item=>{
+            //     return item.path === this.$route.fullPath;
+            // });
+            
+            // if(isExist){
+            //     console.log('is exist',this.$route.fullPath)
+            //     return this.$route.fullPath
+            // }else {
+            //     console.log('is  not exist',this.$route.fullPath)
+            //     return undefined; 
+            // }
             return this.$route.fullPath;
         }
     }

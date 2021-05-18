@@ -258,7 +258,7 @@ export default{
                         if(d<=9)d="0"+d;
                         rnDate[item][1] = y + m + d;
                     }else {
-                        rnDate[item][0] = val2;
+                        rnDate[item][1] = val2;
                     }
 
                     

@@ -146,7 +146,7 @@ let candidateForm = [
     {label:'拟发展时间',prop:'candidateTime',type:'YMArea'},
 ];
 let partyForm = [
-    {label:'转正时间',prop:'partyTime',type:'YMArea'},
+    {label:'转正时间',prop:'confirmTime',type:'YMArea'},
 ];
 
 

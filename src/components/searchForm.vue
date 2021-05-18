@@ -185,7 +185,7 @@ export default{
                     y = val2.getFullYear();
                     m=val2.getMonth()+1;
                     if(m<=9)m = "0" + m;
-                    rnQuery[item][1] = y + m + '31';
+                    rnQuery[item][1] = y +''+ m + '31';
                 }
             });
 

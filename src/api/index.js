@@ -19,7 +19,7 @@ import {ptdToAddress,dateTranfer,addressToPtd,dateBack} from './formDate.js';
  * @returns 
  */
 const requestData = (urlL,query, rqType = 'post') => {
-    // console.log(urlL,rqType,query)
+    console.log(urlL,rqType,query);
     return request({
         url: urlL,
         method: rqType,
@@ -39,9 +39,11 @@ let dataFun = (function(){
         param.userName = obj.userName;
         param.password = obj.password;
         return requestData('/login',param,'post').then((item)=>{
-            console.log('item:',item);
+            console.log('login item:',item);
             localStorage.setItem("token", item.data.token);
             localStorage.setItem("stuId", item.data.user.stu_id);
+            //将获取的数据存储在data.list
+            data.list = JSON.parse(JSON.stringify(item.data.infos.slice(1)));
         });
     }
 
@@ -70,7 +72,20 @@ let dataFun = (function(){
     function addDate(dataArr){
         return new Promise(function(resolve,reject){
             dataArr = arrUni(dataArr);
-            requestData('/addInfoAll',dataArr,'post').then(()=>{
+            requestData('/updateAll',dataArr,'post').then((item)=>{
+                console.log("updateAll item:",item)
+                //删除返回的代表不被允许（周岁小于18岁）添加进数据库的failedList数组中的stuId，
+                let failArr = {};
+                item.failedList.forEach(v=>{
+                    failArr[v] = true;
+                });
+                for(let i= dataArr.length - 1;i>=0;i--){
+                    if(failArr[dataArr[i].stuId]){
+                        dataArr.splice(i,1);
+                    }
+                }
+
+
                 data.list = data.list.concat(dataArr);
                 data.list = arrUni(data.list);
                 // console.log('data_list:',data.list);
@@ -94,7 +109,8 @@ let dataFun = (function(){
                 stuIdObj[stuIdArr[j]] = true;
             }
 
-            requestData('/deleteInfos',stuIdArr,'post').then(()=>{
+            requestData('/deleteInfos',stuIdArr,'post').then((item)=>{
+                console.log("deleteInfos item:",item)
                 for(let i=data.list.length-1;i>=0;i--){
                     if(stuIdObj[data.list[i].stuId]){
                         data.list.splice(i,1);
@@ -120,7 +136,8 @@ let dataFun = (function(){
     function cInfor(infor){
         // console.log('infor:',infor)
         return new Promise(function(resolve,reject){
-            requestData('/updateInfo',infor,'post').then(()=>{
+            requestData('/updateInfo',infor,'post').then((item)=>{
+                console.log("updateInfo item:",item)
                 for(let i=data.list.length-1;i>=0;i--){
                     if(data.list[i].stuId===infor.stuId){
                         data.list[i] = infor;
@@ -158,15 +175,35 @@ let dataFun = (function(){
             data.list.forEach((item)=>{
                 isSelected = true;
                 for(let key in query){
-                    // if(query[key]){
+                    // if(query[key]&&key!=='pageIndex'){
                     //     console.log('the query key:',key)
                     // }
-                    if(query[key]&&Object.prototype.hasOwnProperty.call(item,key)&&(query[key]!==item[key])){
+                    if(query[key]&&key!=='pageIndex'){
                         // console.log('key:',key,'  the value:',query[key], '  the item valu:',item[key]);
                         // 对于stuId，只要item[key]是以query[key]开头的就行
                         if((key==='stuId')&&(String(item[key]).indexOf(query[key])===0)){
                             continue;
                         }
+                        // console.log('key:',key)
+                        //根据item是否存在 申请入党时间 来判断是否申请入党
+                        if(key=='isApplay'){
+                            let val1 = item['applyTime'], val2 = query[key];
+                            // console.log('val',val1);
+                            // console.log('val',val2);
+                            if((val2==1 && val1)||(val2==2 && !val1)){
+                                
+
+                                continue;
+                            }
+                        }
+                        // 根据item的生日来判断是否对应年龄age
+                        if(key==='age'){
+                            let age = item[key].stringify(0,4), ageQuery = query[key];
+                            if(age==ageQuery){
+                                continue;
+                            }
+                        }
+
                         if(key==='actvTrainTime'||key==='devTrainTime'){
                             let val1 = item[key], val2 = query[key];
                             if((Number(val2[0])<=val1[0]) && (Number(val2[1])>=val1[1])){
@@ -180,10 +217,15 @@ let dataFun = (function(){
                             // console.log('TimeArea');
 
                             let val = item[key], area = query[key];
+                            // console.log('key:',key,'val:',val,'area:',area)
                             if((area[0]<=Number(val)) && (Number(val)<=area[1])){
                                 // console.log('In the TimeArea');
                                 continue;
                             }
+                        }
+
+                        if((query[key]===item[key])){
+                            continue;
                         }
                         isSelected = false;break;
                     }
@@ -275,7 +317,26 @@ let dataFun = (function(){
             // console.log("arr:",arr)
             
             
-            requestData('/updateAll',arr,'post').then(()=>{
+            requestData('/addInfoAll',arr,'post').then((item)=>{
+                console.log('addInfoAll item:',item);
+
+
+                 //删除返回的代表不被允许（周岁小于18岁）添加进数据库的failedList数组中的stuId，
+                 let failArr = {};
+                 item.failUserList.forEach(v=>{
+                     failArr[v] = true;
+                 });
+                 //删除那些因为已经存在不被允许添加进数据库中的existedUserList数组中的stuId，
+                 item.existedUserList.forEach(v=>{
+                     failArr[v] = true;
+                 })
+                 for(let i= arr.length - 1;i>=0;i--){
+                     if(failArr[arr[i].stuId]){
+                        arr.splice(i,1);
+                     }
+                 }
+ 
+
                 data.list = arrUni(arr);
                 console.log("arr:",arr);
                 resolve('202');
@@ -360,7 +421,7 @@ let dataFun = (function(){
                     _data.push(JSON.parse(JSON.stringify(item)));
                 }
             })
-            console.log('_data',_data)
+            // console.log('_data',_data)
             let _rDate = {};
             _rDate.list = _data;
             _rDate.itemTotal = _data.length;
@@ -377,7 +438,7 @@ let dataFun = (function(){
             // 下载模板
             let arr = JSON.parse(JSON.stringify([downLoadTemp]));
             let downDate = downDateStyle(arr);
-            console.log("downDate:",downDate);
+            // console.log("downDate:",downDate);
             downLoadExcel(downDate, filterObj.listTitle, filterObj.tableTitle,'支部成员信息'); 
         } else if(filterObj.type===1){
             //下载所有数据
@@ -431,7 +492,7 @@ let dataFun = (function(){
                 // console.log("afterStyle:",_data);
                 tableArray = tableArray.concat(_data);
                 tableArray = arrUni(tableArray);
-                console.log('tableArray:',tableArray);
+                // console.log('tableArray:',tableArray);
 
                 
             } catch(e){
@@ -490,7 +551,6 @@ let dataFun = (function(){
                 bedroom:'3舍A231',//寝室
                 duty:'1',//职务
                 branch:'1',//所在支部
-                imgUrl:'',//照片
                 
                 pTeacher:'李福',//培养联系人
                 leader:'上官云',//入党介绍人
@@ -498,19 +558,19 @@ let dataFun = (function(){
             
             
                 // 申请入党阶段
-                applyTime:'20190920',//申请入党时间
+                applyTime:'20180112',//申请入党时间
                 talkTime:'20191005',//谈心谈话时间
             
                 //入党积极分子的确定和培养阶段
                 electLeagueTime:'20191025',//团推优时间
-                actvTime:'20190511',//确定积极分子时间
-                actvTrainTime:['20200708','20200801'],//积极分子培训时间
-                actvTrainResult:'1',//积极分子培训班结业情况
+                actvTime:'20180511',//确定积极分子时间
+                actvTrainTime:['20180708','20180801'],//积极分子培训时间
+                actvTrainResult:'2',//积极分子培训班结业情况
             
                 //发展对象的确定和考察阶段
-                devTime:'20201201',//确定发展对象时间
-                devTrainTime:['20210201','20210302'],//发展对象培训时间
-                devTrainResult:'1',//发展对象培训班结业情况
+                devTime:'20181201',//确定发展对象时间
+                devTrainTime:['20180201','20180302'],//发展对象培训时间
+                devTrainResult:'2',//发展对象培训班结业情况
                 classRank:'6',//业务课排名
                 extFileTime:'20210412',//外调材料日期
                 polFileTime:'20210412',//政审材料日期
@@ -519,14 +579,14 @@ let dataFun = (function(){
                 pubTime:'20210501',//公示日期
             
                 // 预备党员的接收阶段
-                jnTime:'20210502',//入党时间
+                jnTime:'20180502',//入党时间
                 aPartyCheckTime:'20210503',//入党总支审查日期
                 hPartyTalkTime:'20210504',//发展党员上级组织谈话日期
                 hPartyPassTime:'20210505',//入党上级党委审批日期
                 
                 
                 // 预备党员的教育考察和转正阶段
-                confirmTime:'20210506',//转正时间
+                confirmTime:'20180506',//转正时间
                 partyConfirmTime:'20210506',//转正总支审查日期
                 hPartyConfirmTime:'20210507',//转正上级党委审批日期
                 delayReadyTime:'20210508',//延长预备期日期
@@ -555,7 +615,6 @@ let dataFun = (function(){
                 bedroom:'3舍A231',//寝室
                 duty:'2',//职务
                 branch:'1',//所在支部
-                imgUrl:'',//照片
                 
                 pTeacher:'李福',//培养联系人
                 leader:'上官云',//入党介绍人
@@ -620,7 +679,6 @@ let dataFun = (function(){
                 bedroom:'3舍A231',//寝室
                 duty:'3',//职务
                 branch:'1',//所在支部
-                imgUrl:'',//照片
                 
                 pTeacher:'李福',//培养联系人
                 leader:'上官云',//入党介绍人
@@ -685,7 +743,6 @@ let dataFun = (function(){
                 bedroom:'3舍A231',//寝室
                 duty:'4',//职务
                 branch:'1',//所在支部
-                imgUrl:'',//照片
                 
                 pTeacher:'李福',//培养联系人
                 leader:'上官云',//入党介绍人
@@ -749,7 +806,6 @@ let dataFun = (function(){
                 bedroom:'3舍A231',//寝室
                 duty:'5',//职务
                 branch:'1',//所在支部
-                imgUrl:'',//照片
                 
                 pTeacher:'李福',//培养联系人
                 leader:'上官云',//入党介绍人
@@ -812,9 +868,8 @@ let dataFun = (function(){
                 tutor:'张李',//导师
                 stage:'1',//所处阶段
                 bedroom:'3舍A231',//寝室
-                duty:'6',//职务
+                duty:'5',//职务
                 branch:'1',//所在支部
-                imgUrl:'',//照片
                 
                 pTeacher:'李福',//培养联系人
                 leader:'上官云',//入党介绍人
@@ -879,7 +934,6 @@ let dataFun = (function(){
                 bedroom:'3舍A231',//寝室
                 duty:'2',//职务
                 branch:'1',//所在支部
-                imgUrl:'',//照片
                 
                 pTeacher:'李福',//培养联系人
                 leader:'上官云',//入党介绍人
@@ -969,7 +1023,6 @@ var downLoadTemp = {
     bedroom:'3舍A231',//寝室
     duty:'1',//职务
     branch:'1',//所在支部
-    imgUrl:'',//照片
     
     pTeacher:'李福',//培养联系人
     leader:'上官云',//入党介绍人

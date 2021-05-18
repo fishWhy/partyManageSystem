@@ -56,13 +56,13 @@ export default {
                 delItem.path === this.$route.fullPath &&
                     this.$router.push(item.path);
             } else {
-                this.$router.push("/");
+                this.$router.push("/home/table");
             }
         },
         // 关闭全部标签
         closeAll() {
             this.$store.commit("clearTags");
-            this.$router.push("/");
+            this.$router.push("/home/table");
         },
         // 关闭其他标签
         closeOther() {
@@ -94,8 +94,8 @@ export default {
     },
     watch: {
         $route(newValue) {
-            console.log('router newValue:',newValue);
-            console.log('tagsList:',this.tagsList)
+            // console.log('router newValue:',newValue);
+            // console.log('tagsList:',this.tagsList)
             this.setTags(newValue);
         }
     },

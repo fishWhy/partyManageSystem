@@ -5,7 +5,7 @@
                 <span style="line-height:40px;font-family:'PingFang SC'">信息详情表</span>
                 <div style="float:right;text-align:right;">
                     <el-button type="primary" size="small" style="margin-right:30px" @click="backToTable">返回</el-button>
-                    <el-button type="success" size="small" @click="editData">编辑</el-button>
+                    <el-button type="success" size="small" @click="editData" v-if="status === 1">编辑</el-button>
                     <el-button type="success" size="small" @click="saveEdit">保存</el-button>
                 </div>
             </el-header>
@@ -258,6 +258,7 @@ export default {
         },
         
         async saveEdit(){
+
             let nData;
             if(this.disabled){
                 this.$message({
@@ -271,19 +272,19 @@ export default {
             let applyTime = this.$refs.applyStage.getYMRDate('applyTime'); 
             let actvTime = this.$refs.actvStage.getYMRDate("actvTime");
             let jnTime = this.$refs.candidateStage.getYMRDate("jnTime");
-            console.log('applyTime:',applyTime);
-            console.log('actvTime:',actvTime);
-            console.log('jinTime:',jnTime);
+            // console.log('applyTime:',applyTime);
+            // console.log('actvTime:',actvTime);
+            // console.log('jinTime:',jnTime);
             let str = "";
-            if(!this.isDateBigM(applyTime,actvTime,6)){
+            if(applyTime&&actvTime&&!this.isDateBigM(applyTime,actvTime,6)){
                 str = '申请入党时间与确定积极分子时间必须相差6个月以上;'
                 // this.$message({type:'error',message:'申请入党时间与确定积极分子时间必须相差6个月以上，请改正'});
                 // return;
             }
-            if(!this.isDateBigM(actvTime,jnTime,12)){
+            if(actvTime&&jnTime&&!this.isDateBigM(actvTime,jnTime,12)){
                 str +='确定积极分子时间与入党时间必须相差1年以上';
                 // this.$message({type:'error',message:'确定积极分子时间与入党时间必须相差1年以上，请改正'});
-                return;
+                // return;
             }
 
 
@@ -294,6 +295,11 @@ export default {
                         });
                 
                 nData = this.getDateFromTableForm();
+                // console.log('nData',nData);
+                if(!nData.stuId||!nData.name){
+                    this.$message({type:'error',message:'学号与姓名必须添加'});
+                    return;
+                }
                 //将数据提交给后台
 
                 if(this.status===1){
@@ -309,7 +315,11 @@ export default {
 
                 this.$message.success(`保存id为 ${this.person.stuId} 的同学的信息成功`);
                 
-                this.$router.push({path:'/home/table'});
+                this.$store.commit("closeCurrentTag", {
+                    $router: this.$router,
+                    $route: this.$route,
+                    // toPath:'/home/table'
+                });
 
             }catch(e){
                 console.log(e);
@@ -321,7 +331,12 @@ export default {
             }
         },
         backToTable(){
-            this.$router.push({path:'/home/table'});
+            // console.log('backToTable route',this.$route);
+            this.$store.commit("closeCurrentTag", {
+                $router: this.$router,
+                $route: this.$route
+            });
+            // this.$router.push({path:'/home/table'});
         },
 
         isDateBigM(time1,time2, m){

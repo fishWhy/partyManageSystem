@@ -29,7 +29,11 @@ export default createStore({
             for (let i = 0, len = state.tagsList.length; i < len; i++) {
                 const item = state.tagsList[i];
                 if (item.path === data.$route.fullPath) {
-                    if (i < len - 1) {
+                    if(data.toPath){
+                        data
+                            .$router
+                            .push(data.toPath+"");
+                    } else if (i < len - 1) {
                         data
                             .$router
                             .push(state.tagsList[i + 1].path);
@@ -40,7 +44,7 @@ export default createStore({
                     } else {
                         data
                             .$router
-                            .push("/");
+                            .push("/home/table");
                     }
                     state
                         .tagsList
@@ -52,7 +56,8 @@ export default createStore({
         // 侧边栏折叠
         hadndleCollapse(state, data) {
             state.collapse = data;
-        }
+        },
+        
     },
     actions: {},
     modules: {}
