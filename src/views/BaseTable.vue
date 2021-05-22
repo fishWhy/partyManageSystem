@@ -136,11 +136,11 @@
                 </div>
                 <div style="margin-top:20px">
                     <div  style="margin-bottom:10px"><el-tag>导入Excel文件</el-tag></div>
-                    <el-radio v-model="impExcel" label="1" border>导入新的Excel</el-radio>
-                    <el-radio v-model="impExcel" label="2" border>添加Excel</el-radio>
+                    <el-radio v-model="impExcel" label="2" border>添加更新数据</el-radio>
+                    <el-radio v-model="impExcel" label="1" border>替换数据</el-radio>
                     <div style="margin: 10px 0 10px 0" >
-                        <span v-show="!impExcel||impExcel=='1'">导入新的Excel替换当前表格所有内容</span>
-                        <span v-show="impExcel=='2'">导入Excel添加到当前表格的后面</span>
+                        <span v-show="!impExcel||impExcel=='1'">导入新的Excel替换拥有相同学号的同学的数据</span>
+                        <span v-show="impExcel=='2'">导入Excel添加新数据或更新具有相同学号的同学的数据</span>
                     </div>
                     
                     <el-upload
@@ -183,10 +183,25 @@
 
 
          <!-- 导出excel -->
-        <el-dialog title="导出Excel" v-model="exportVisible" width="30%" >
+        <el-dialog title="导出Excel" v-model="exportVisible" width="36%" >
             <div >
+                <div  id="transfer314">
+                    <div style="text-align:left;margin-bottom:10px;"><el-tag size="medium">导出属性选择</el-tag></div>
+                    <div>
+                        <el-transfer v-model="transferData" :data='baseTransfer' 
+                        filterable
+                        :titles="['当前未选属性','导出属性']"
+                        filter-placeholder="属性搜索"
+                        size="small"></el-transfer>
+                    </div>
+                </div>
+
                 <div>
-                    <span>导出时，可按照当前搜索结果导出(如果未搜索会导出所有数据)，也可按照当前所选结果导出</span>
+                    <div style="text-align:left;margin-bottom:10px;"><el-tag size="medium">导出内容选择</el-tag></div>
+                    <div>
+                        <span v-if="exExcle==='1'">导出时，可按照当前搜索结果导出(如果未搜索会导出所有数据)</span>
+                        <span v-else>导出时，可按照按照当前所选结果导出</span>
+                    </div>
                     <!-- <div style="margin-top:10px">
                         导入的Excel时,籍贯一定要加/(如:河北省/秦皇岛市/山海关区),否则会导入错误。
                     </div> -->
@@ -290,8 +305,11 @@ export default {
             //文件导出
             listTitle:[],
             tableTitle:[],
+
             exportVisible:false,
             exExcle:'1',
+            transferData:'',
+            baseTransfer:[],
 
             //文件导入
             fileTemp:'',
@@ -303,7 +321,7 @@ export default {
 
             //导入Excel
             importVisible: false,
-            impExcel: '1',
+            impExcel: '2',
             // maxNumFile:10,
 
             
@@ -326,20 +344,36 @@ export default {
             // 设置一个锁，防止换页时自动更改selectedItem
             selectedItemLock:false,
 
-            attriShow:["stuId","name","gender","national","birthday","branch","proED","grade","class","stage"],
+            attriShow:["stuId","name","gender","national","birthday","branch","proED","grade","tclass","stage"],
+            
+            
 
         };
     },
     created() {
-        console.log('createBaseTable')
+        // console.log('createBaseTable')
         this.getData();
         this. formList = formList;
 
+
         this.listTitle = Object.keys(listMap);
+
+        let obj = {};
         
         this.listTitle.forEach(item=>{
             this.tableTitle.push(listMap[item]);
-        })
+            
+            obj = {};
+            obj.key = item;
+            obj.label = listMap[item];
+            this.baseTransfer.push(obj);
+        });
+        this.transferData = this.attriShow;
+
+
+        
+
+        
 
         // console.log('CreatlistTitle:',this.listTitle);
         // console.log('CreattableTitle:',this.tableTitle);
@@ -579,6 +613,8 @@ export default {
             this.exportVisible = false;
         },
         exportExc(){
+            let that = this.filterExcAttri();
+
             if(this.exExcle==2){
                 let exportIds = this.selectedItem;
                  //数据都已经删除，更新this.selectedItem为空，将this.selectedItemLock置为false
@@ -587,17 +623,26 @@ export default {
 
                 //重新获取数据
                 // this.getData(this.query);
-                let that = this;
                 let obj = {type:2,  listTitle: that.listTitle,  tableTitle: that.tableTitle}
                 downDate(obj,this.query,exportIds);
 
                 // this.$message.success(``)
             } else{
-                let that = this;
                 let obj = {type:1,  listTitle: that.listTitle,  tableTitle: that.tableTitle}
                 downDate(obj,this.query);
             }
             this.exportVisible = false;
+        },
+        // 根据Transfer 穿梭框所选属性返回下载excel时需要的表头
+        filterExcAttri(){
+            let obj = {listTitle:[],tableTitle:[]};
+
+            this.transferData.forEach(item=>{
+                obj.listTitle.push(item);
+                obj.tableTitle.push(listMap[item]);
+            })
+
+            return obj;
         },
 
 
@@ -807,4 +852,53 @@ export default {
     /* outline: 1px solid red; */
     padding-bottom: 0px;
 }
+
+#transfer314{
+    margin: 0px auto 20px auto;
+    /* outline: 1px solid red; */
+    text-align: center;
+
+}
+
+#transfer314 .el-transfer{
+    text-align: center;
+    font-size: 12px;
+    /* outline: 1px solid rgb(0, 234, 255); */
+
+}
+
+#transfer314 .el-transfer .el-transfer-panel{
+    text-align: left;
+    font-size: 12px;
+    /* outline: 1px solid blue; */
+}
+
+#transfer314 .el-transfer .el-transfer-panel .el-checkbox__label{
+    font-size: 14px;
+}
+
+#transfer314 .el-transfer .el-transfer__buttons{
+    /* outline: 1px solid red; */
+    width: 100px;
+    height: 50px;
+    line-height: 50px;
+    padding: 0;
+    margin: 0 20px;
+}
+
+#transfer314 .el-transfer .el-transfer__buttons button:nth-child(1){
+    width: 35px;
+    padding: 0;
+    margin: 0 10px 0 0;
+}
+#transfer314 .el-transfer .el-transfer__buttons button:nth-child(2){
+    width: 35px;
+    padding: 0;
+    margin: 0 0 0 10px;
+}
+
+#el_dialogExport314 .el-dialog__body{
+    padding-top: 0;
+}
+
 </style>

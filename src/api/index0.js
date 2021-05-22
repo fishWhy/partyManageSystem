@@ -38,7 +38,13 @@ let dataFun = (function(){
         let param = {};
         param.userName = obj.userName;
         param.password = obj.password;
-        return Promise.resolve('登录成功')
+        return requestData('/login',param,'post').then((item)=>{
+            console.log('login item:',item);
+            localStorage.setItem("token", item.data.token);
+            localStorage.setItem("stuId", item.data.user.stu_id);
+            //将获取的数据存储在data.list
+            data.list = JSON.parse(JSON.stringify(item.data.infos.slice(1)));
+        });
     }
 
     //数组去重,排在后面的元素会完全替代排在前面的拥有相同stuId的元素
@@ -90,14 +96,29 @@ let dataFun = (function(){
     //增
     // 将传入的数组dataItem添加到数据的结尾,在添加的过程中去重并跟新原先的值
     function addDate(dataArr){
-        return new Promise(function(resolve){
+        return new Promise(function(resolve,reject){
             dataArr =  arrAttrUni(dataArr);
-            data.list = data.list.concat(dataArr);
-            data.list =  arrAttrUni(data.list);
-            // console.log('data_list:',data.list);
-            resolve('202');
+            requestData('/updateAll',dataArr,'post').then((item)=>{
+                console.log("updateAll item:",item)
+                //删除返回的代表不被允许（周岁小于18岁）添加进数据库的failedList数组中的stuId，
+                let failArr = {};
+                item.failedList.forEach(v=>{
+                    failArr[v] = true;
+                });
+                for(let i= dataArr.length - 1;i>=0;i--){
+                    if(failArr[dataArr[i].stuId]){
+                        dataArr.splice(i,1);
+                    }
+                }
 
-                      
+
+                data.list = data.list.concat(dataArr);
+                data.list = arrAttrUni(data.list);
+                // console.log('data_list:',data.list);
+                resolve('202');
+            },item=>{
+                reject(item);
+            });           
         })
     }
      
@@ -114,15 +135,24 @@ let dataFun = (function(){
                 stuIdObj[stuIdArr[j]] = true;
             }
 
-            for(let i=data.list.length-1;i>=0;i--){
-                if(stuIdObj[data.list[i].stuId]){
-                    data.list.splice(i,1);
-                    // len--;
-                } 
-            }
+            requestData('/deleteInfos',stuIdArr,'post').then((item)=>{
+                console.log("deleteInfos item:",item)
+                for(let i=data.list.length-1;i>=0;i--){
+                    if(stuIdObj[data.list[i].stuId]){
+                        data.list.splice(i,1);
+                        // len--;
+                    } 
+                }
+    
+                resolve('成功删除')
+            },item=>{
+                reject(item);
+            });
 
-            resolve('202')
+            
 
+            //未查找到对应的数据，无法删除
+            // reject(stuId);
         })
         
     }
@@ -132,16 +162,23 @@ let dataFun = (function(){
     function cInfor(infor){
         // console.log('infor:',infor)
         return new Promise(function(resolve,reject){
-            for(let i=data.list.length-1;i>=0;i--){
-                if(data.list[i].stuId===infor.stuId){
-                    data.list[i] = infor;
-                    // console.log('that is all right')
-                    resolve(infor.stuId)
-                    return;
+            requestData('/updateInfo',infor,'post').then((item)=>{
+                console.log("updateInfo item:",item)
+                for(let i=data.list.length-1;i>=0;i--){
+                    if(data.list[i].stuId===infor.stuId){
+                        data.list[i] = infor;
+                        // console.log('that is all right')
+                        resolve(infor.stuId)
+                        return;
+                    }
                 }
-            }
-             //未查找到对应的数据，无法修改
-            reject(infor.stuId);
+                 //未查找到对应的数据，无法修改
+                reject(infor.stuId);
+            },item=>{
+                reject(item)
+            });
+            
+           
         }) 
     }
 
@@ -301,12 +338,38 @@ let dataFun = (function(){
 
     // 将data.list的值更新为 tableDate
     async function  setNewData (tableData){
-         return new Promise(function(resolve){
+         return new Promise(function(resolve,reject){
             let arr = JSON.parse(JSON.stringify(tableData));
             // console.log("arr:",arr)
-            data.list = arrUni(data.list.concat(arr));
-            console.log("arr:",arr);
-            resolve('202');
+            
+            
+            requestData('/addInfoAll',arr,'post').then((item)=>{
+                console.log('addInfoAll item:',item);
+
+
+                 //删除返回的代表不被允许（周岁小于18岁）添加进数据库的failedList数组中的stuId，
+                 let failArr = {};
+                 item.failUserList.forEach(v=>{
+                     failArr[v] = true;
+                 });
+                 //删除那些因为已经存在不被允许添加进数据库中的existedUserList数组中的stuId，
+                 item.existedUserList.forEach(v=>{
+                     failArr[v] = true;
+                 })
+                 for(let i= arr.length - 1;i>=0;i--){
+                     if(failArr[arr[i].stuId]){
+                        arr.splice(i,1);
+                     }
+                 }
+ 
+
+                data.list = arrUni(data.list.concat(arr));
+                console.log("arr:",arr);
+                resolve('202');
+
+            },(item)=>{
+                reject(item);
+            });
 
          })
     }

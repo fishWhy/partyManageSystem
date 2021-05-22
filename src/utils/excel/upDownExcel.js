@@ -45,14 +45,23 @@ function importfxx(obj,listTitle,tableTitle) {
                         // console.log('_objKeys:',_objKeys);
                         // console.log('_tableTitle::',tableTitle);
 
-                        if(_objKeys.length===tableTitle.length){
-                            tableTitle.forEach(item=>{
-                                if(_objKeys.indexOf(item)===-1){
-                                    // console.log('the item is',item);
-                                   reject(`1.文件《${data[i].name}》内容格式错误，${item},请删除后重新上传！`);
+                        if(_objKeys.length<=tableTitle.length){
+                            let item;
+                            for(let i=0;i<_objKeys.length;i++){
+                                item = _objKeys[i];
+                                if(tableTitle.indexOf(item)===-1){
+                                    reject(`1.文件《${data[i].name}》内容格式错误，${item},请删除后重新上传！`);
                                     return;
                                 }
-                            })
+                            }
+
+                            // tableTitle.forEach(item=>{
+                            //     if(_objKeys.indexOf(item)===-1){
+                            //         // console.log('the item is',item);
+                            //        reject(`1.文件《${data[i].name}》内容格式错误，${item},请删除后重新上传！`);
+                            //         return;
+                            //     }
+                            // })
                         }else{
                             reject(`2.文件《${obj.name}》内容格式错误，请删除后重新上传！,${_objKeys.length},${tableTitle.length}`);
                             return;
